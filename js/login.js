@@ -72,7 +72,7 @@ async function handleLogin() {
     localStorage.removeItem('zi_remembered_nip');
   }
 
-  window.location.replace('index.html');
+  window.location.replace('insight.html');
 }
 
 async function handleLoginGoogle() {
@@ -108,7 +108,7 @@ async function handleLinkGoogle() {
   }
 
   if (success) {
-    window.location.replace('index.html');
+    window.location.replace('insight.html');
   }
 }
 

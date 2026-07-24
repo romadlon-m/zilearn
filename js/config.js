@@ -33,7 +33,7 @@ function driveUrl(shareUrl) {
   if (!shareUrl) return '';
   const match = shareUrl.match(/\/d\/([^/]+)\//);
   return match
-    ? `https://drive.google.com/uc?export=view&id=${match[1]}`
+    ? `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`
     : shareUrl;
 }
 

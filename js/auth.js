@@ -19,12 +19,14 @@ async function getProfil() {
   if (!session) return null;
 
   // Coba by id
-  const { data: byId } = await db
+  const { data: byIdArr } = await db
     .from('pegawai')
     .select('*')
     .eq('id', session.user.id)
-    .single();
+    .limit(1);
 
+    const byId = byIdArr?.[0] ?? null;
+  
   if (byId) return byId;
 
   // Fallback: coba by google_email
@@ -73,13 +75,13 @@ async function requireLogin() {
 
 async function requireAdmin() {
   const profil = await getProfil();
-  if (!profil || profil.role !== CONFIG.ROLE_ADMIN) window.location.replace('index.html');
+  if (!profil || profil.role !== CONFIG.ROLE_ADMIN) window.location.replace('insight.html');
   return profil;
 }
 
 async function redirectIfLoggedIn() {
   const session = await getSession();
-  if (session) window.location.replace('index.html');
+  if (session) window.location.replace('insight.html');
 }
 
 async function getDaftarPegawai() {

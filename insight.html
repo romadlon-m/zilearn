@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZI Insight — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .insight-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+      text-decoration: none;
+      display: block;
+      color: inherit;
+    }
+    .insight-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+      text-decoration: none;
+      color: inherit;
+    }
+    .insight-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .insight-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .insight-excerpt {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .insight-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    /* Modal artikel */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-y: auto;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--surface-card);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      width: 100%;
+      max-width: 680px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      border-radius: var(--radius-sm);
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-body {
+      font-size: 0.9375rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      margin-top: 1rem;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">ZI Insight</h1>
+      <p class="page-subtitle">Materi pembelajaran singkat seputar Zona Integritas, 3–5 menit baca.</p>
+    </div>
+
+    <!-- Filter pilar -->
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-chip active" data-filter="semua" onclick="filterInsight('semua', this)">
+        Semua
+      </button>
+    </div>
+
+    <!-- List artikel -->
+    <div id="insight-list">
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal baca artikel -->
+<div class="modal-backdrop" id="modal-artikel">
+  <div class="modal-content">
+    <button class="modal-close" onclick="tutupModal()" aria-label="Tutup">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div id="modal-badge"></div>
+    <h2 id="modal-judul" style="margin-top:8px;font-size:1.25rem;"></h2>
+    <div id="modal-date" class="insight-date"></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+// Data artikel dari Sheets
+let semuaArtikel = [];
+let filterAktif  = 'semua';
+
+(async () => {
+  await loadSidebar('insight');
+  await muatInsight();
+})();
+
+async function muatInsight() {
+  const listEl = document.getElementById('insight-list');
+
+  try {
+    const res  = await fetch(CONFIG.SHEETS_KONTEN);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    // Filter hanya tipe Artikel
+    semuaArtikel = rows
+      .filter(r => r.tipe === 'Artikel' && r.judul && r.isi)
+      .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+    if (semuaArtikel.length === 0) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📖</div>
+          <div class="empty-state-title">Belum ada artikel</div>
+          <div class="empty-state-sub">Artikel akan muncul di sini setelah admin menambahkan konten.</div>
+        </div>`;
+      return;
+    }
+
+    // Bangun filter pilar
+    bangunFilter(semuaArtikel);
+
+    // Render semua
+    renderInsight(semuaArtikel);
+
+  } catch (e) {
+    console.error(e);
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Gagal memuat konten</div>
+        <div class="empty-state-sub">Periksa koneksi internet dan coba lagi.</div>
+      </div>`;
+  }
+}
+
+function bangunFilter(artikel) {
+  const filterBar = document.getElementById('filter-bar');
+  const pilars    = [...new Set(artikel.map(a => a.pilar).filter(Boolean))].sort();
+
+  pilars.forEach(pilar => {
+    const btn = document.createElement('button');
+    btn.className        = 'filter-chip';
+    btn.dataset.filter   = pilar;
+    btn.textContent      = pilar;
+    btn.onclick          = () => filterInsight(pilar, btn);
+    filterBar.appendChild(btn);
+  });
+}
+
+function filterInsight(pilar, btnEl) {
+  filterAktif = pilar;
+
+  // Update active chip
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+
+  const filtered = pilar === 'semua'
+    ? semuaArtikel
+    : semuaArtikel.filter(a => a.pilar === pilar);
+
+  renderInsight(filtered);
+}
+
+function renderInsight(artikel) {
+  const listEl = document.getElementById('insight-list');
+
+  if (artikel.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-title">Tidak ada artikel untuk filter ini</div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:flex;flex-direction:column;gap:12px;';
+
+  artikel.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'insight-card';
+    card.onclick   = () => bukaModal(a);
+    card.innerHTML = `
+      <div class="insight-meta">
+        <span class="badge badge-primary">${a.pilar || ''}</span>
+      </div>
+      <div class="insight-title">${a.judul}</div>
+      <div class="insight-excerpt">${a.isi}</div>
+      <div class="insight-date">${formatTanggal(a.tanggal)}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  listEl.appendChild(grid);
+}
+
+function bukaModal(artikel) {
+  document.getElementById('modal-badge').innerHTML =
+    `<span class="badge badge-primary">${artikel.pilar || ''}</span>`;
+  document.getElementById('modal-judul').textContent = artikel.judul;
+  document.getElementById('modal-date').textContent  = formatTanggal(artikel.tanggal);
+  document.getElementById('modal-body').textContent  = artikel.isi;
+  document.getElementById('modal-artikel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function tutupModal() {
+  document.getElementById('modal-artikel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Tutup modal klik backdrop
+document.getElementById('modal-artikel').addEventListener('click', function(e) {
+  if (e.target === this) tutupModal();
+});
+
+// Tutup modal tekan Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') tutupModal();
+});
+
+/* ── Parse CSV dari Google Sheets ───────────────────────── */
+function parseCSV(text) {
+  const lines  = text.trim().split('\n');
+  const header = parseCSVRow(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVRow(line);
+    const obj  = {};
+    header.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+function parseCSVRow(row) {
+  const result = [];
+  let current  = '';
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+</script>
+
+</body>
+</html>

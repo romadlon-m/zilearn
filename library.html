@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZI Library — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .library-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .library-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+    .library-card-img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.8125rem;
+    }
+    .library-card-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .library-card-body {
+      padding: 0.875rem;
+    }
+    .library-card-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .library-card-date {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* Modal gambar */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-img-wrap {
+      position: relative;
+      max-width: 600px;
+      width: 100%;
+    }
+    .modal-img-wrap img {
+      width: 100%;
+      border-radius: var(--radius-lg);
+      display: block;
+    }
+    .modal-img-caption {
+      color: #fff;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.875rem;
+      opacity: 0.85;
+    }
+    .modal-close {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    /* Filter tipe */
+    .filter-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">ZI Library</h1>
+      <p class="page-subtitle">Arsip konten dan infografis yang sudah dibagikan.</p>
+    </div>
+
+    <!-- Filter tipe konten -->
+    <div class="filter-section" id="filter-tipe">
+      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua', 'tipe', this)">Semua</button>
+      <button class="filter-chip" data-filter="MythFact" onclick="filterLibrary('MythFact', 'tipe', this)">Myth vs Fact</button>
+      <button class="filter-chip" data-filter="TahukahKamu" onclick="filterLibrary('TahukahKamu', 'tipe', this)">Tahukah Kamu</button>
+      <button class="filter-chip" data-filter="TipsIntegritas" onclick="filterLibrary('TipsIntegritas', 'tipe', this)">Tips Integritas</button>
+    </div>
+
+    <!-- Filter pilar -->
+    <div class="filter-section" id="filter-pilar">
+      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua', 'pilar', this)">Semua Pilar</button>
+    </div>
+
+    <!-- Grid konten -->
+    <div id="library-grid">
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal gambar -->
+<div class="modal-backdrop" id="modal-gambar">
+  <div class="modal-img-wrap">
+    <button class="modal-close" onclick="tutupModal()" aria-label="Tutup">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <img id="modal-img-src" src="" alt="">
+    <div class="modal-img-caption" id="modal-img-caption"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+let semuaKonten  = [];
+let filterTipe   = 'semua';
+let filterPilar  = 'semua';
+
+(async () => {
+  await loadSidebar('library');
+  await muatLibrary();
+})();
+
+async function muatLibrary() {
+  const gridEl = document.getElementById('library-grid');
+
+  try {
+    const res  = await fetch(CONFIG.SHEETS_KONTEN);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    // Hanya konten Library (bukan Artikel)
+    semuaKonten = rows
+      .filter(r => r.tipe && r.tipe !== 'Artikel' && r.judul)
+      .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+    if (semuaKonten.length === 0) {
+      gridEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🗂️</div>
+          <div class="empty-state-title">Belum ada konten</div>
+          <div class="empty-state-sub">Konten akan muncul setelah admin menambahkan materi.</div>
+        </div>`;
+      return;
+    }
+
+    // Bangun filter pilar dinamis
+    bangunFilterPilar(semuaKonten);
+    renderLibrary();
+
+  } catch (e) {
+    console.error(e);
+    gridEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Gagal memuat konten</div>
+        <div class="empty-state-sub">Periksa koneksi internet dan coba lagi.</div>
+      </div>`;
+  }
+}
+
+function bangunFilterPilar(konten) {
+  const filterBar = document.getElementById('filter-pilar');
+  const pilars    = [...new Set(konten.map(k => k.pilar).filter(Boolean))].sort();
+  pilars.forEach(pilar => {
+    const btn = document.createElement('button');
+    btn.className      = 'filter-chip';
+    btn.dataset.filter = pilar;
+    btn.textContent    = pilar;
+    btn.onclick        = () => filterLibrary(pilar, 'pilar', btn);
+    filterBar.appendChild(btn);
+  });
+}
+
+function filterLibrary(nilai, jenis, btnEl) {
+  if (jenis === 'tipe')  filterTipe  = nilai;
+  if (jenis === 'pilar') filterPilar = nilai;
+
+  // Update chip aktif per grup
+  const grupId = jenis === 'tipe' ? 'filter-tipe' : 'filter-pilar';
+  document.querySelectorAll(`#${grupId} .filter-chip`).forEach(b => b.classList.remove('active'));
+  btnEl.classList.add('active');
+
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const gridEl = document.getElementById('library-grid');
+  let filtered = semuaKonten;
+
+  if (filterTipe  !== 'semua') filtered = filtered.filter(k => k.tipe  === filterTipe);
+  if (filterPilar !== 'semua') filtered = filtered.filter(k => k.pilar === filterPilar);
+
+  if (filtered.length === 0) {
+    gridEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-title">Tidak ada konten untuk filter ini</div>
+      </div>`;
+    return;
+  }
+
+  const tipeBadge = {
+    MythFact      : { label: 'Myth vs Fact', cls: 'badge-primary' },
+    TahukahKamu   : { label: 'Tahukah Kamu', cls: 'badge-accent'  },
+    TipsIntegritas: { label: 'Tips',          cls: 'badge-success' },
+  };
+
+  gridEl.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'library-grid';
+
+  filtered.forEach(k => {
+    const imgUrl = driveUrl(k.link_gambar);
+    const badge  = tipeBadge[k.tipe] ?? { label: k.tipe, cls: 'badge-muted' };
+
+    const card = document.createElement('div');
+    card.className = 'library-card';
+    card.onclick   = () => imgUrl ? bukaModal(imgUrl, k.judul) : null;
+
+    card.innerHTML = `
+      <div class="library-card-img">
+        ${imgUrl
+          ? `<img src="${imgUrl}" alt="${k.judul}"
+      onerror="this.parentElement.innerHTML='<span>Gambar tidak tersedia</span>'">`
+          : '<span>Belum ada gambar</span>'
+        }
+      </div>
+      <div class="library-card-body">
+        <span class="badge ${badge.cls}" style="margin-bottom:6px;">${badge.label}</span>
+        <div class="library-card-title">${k.judul}</div>
+        <div class="library-card-date">${formatTanggal(k.tanggal)}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  gridEl.appendChild(grid);
+}
+
+function bukaModal(imgUrl, judul) {
+  document.getElementById('modal-img-src').src       = imgUrl;
+  document.getElementById('modal-img-caption').textContent = judul;
+  document.getElementById('modal-gambar').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function tutupModal() {
+  document.getElementById('modal-gambar').classList.remove('open');
+  document.getElementById('modal-img-src').src = '';
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modal-gambar').addEventListener('click', function(e) {
+  if (e.target === this) tutupModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupModal(); });
+
+/* ── Parse CSV ───────────────────────────────────────────── */
+function parseCSV(text) {
+  const lines  = text.trim().split('\n');
+  const header = parseCSVRow(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVRow(line);
+    const obj  = {};
+    header.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+function parseCSVRow(row) {
+  const result = [];
+  let current  = '';
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+</script>
+
+</body>
+</html>
