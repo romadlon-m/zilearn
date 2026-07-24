@@ -17,7 +17,7 @@ const CONFIG = {
 
   /* ── Nama Platform ────────────────────────────────────── */
   APP_NAME      : 'ZI Learning',
-  APP_SUB       : 'BPS Bangka Belitung',
+  APP_SUB       : 'BPS Provinsi Kepulauan Bangka Belitung',
 
   /* ── Pengaturan Kuis ──────────────────────────────────── */
   QUIZ_JUMLAH_SOAL : 10,    // jumlah soal per sesi kuis
