@@ -34,7 +34,6 @@
     const statusEl = document.getElementById('status-text');
 
     try {
-      // Supabase handle PKCE exchange otomatis dari URL hash/query
       const { data: { session }, error: sessionError } =
         await db.auth.getSession();
 
@@ -44,17 +43,17 @@
         return;
       }
 
-      // Cek apakah akun Google sudah ter-link ke pegawai
       statusEl.textContent = 'Memeriksa akun...';
       const profil = await cekLinkGoogle();
 
       if (profil) {
-        // Sudah ter-link → langsung masuk
         statusEl.textContent = `Selamat datang, ${profil.nama}!`;
         setTimeout(() => window.location.replace('index.html'), 800);
       } else {
-        // Belum ter-link → kembali ke login, tampilkan modal link NIP
+        // Simpan google_email ke sessionStorage sebelum signOut
+        sessionStorage.setItem('zi_google_email', session.user.email);
         statusEl.textContent = 'Akun belum terhubung ke NIP. Mengalihkan...';
+        await db.auth.signOut();
         sessionStorage.setItem('zi_need_link', '1');
         setTimeout(() => window.location.replace('login.html'), 1000);
       }
@@ -62,6 +61,7 @@
     } catch (err) {
       console.error('Callback error:', err);
       statusEl.textContent = 'Terjadi kesalahan. Mengalihkan...';
+      await db.auth.signOut();
       sessionStorage.setItem('zi_login_error', 'unknown');
       setTimeout(() => window.location.replace('login.html'), 1500);
     }

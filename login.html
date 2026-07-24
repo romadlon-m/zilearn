@@ -13,7 +13,6 @@
 
   <div class="login-card">
 
-    <!-- Logo -->
     <div class="login-logo">
       <div class="login-logo-icon">ZI</div>
       <div>
@@ -25,10 +24,8 @@
     <h2 style="font-size:1.125rem;margin-bottom:4px;">Masuk ke Akun</h2>
     <p style="font-size:0.875rem;margin-bottom:1.5rem;">Pilih nama dan masukkan 5 digit terakhir NIP lama</p>
 
-    <!-- Alert error -->
     <div id="alert-error" class="alert alert-danger mb-4" style="display:none;"></div>
 
-    <!-- Form Login NIP -->
     <div class="form-group">
       <label class="form-label">Nama</label>
       <select id="select-nama" class="form-select">
@@ -60,10 +57,8 @@
       Masuk
     </button>
 
-    <!-- Divider -->
     <div class="login-divider"><span>atau</span></div>
 
-    <!-- Google Login -->
     <button class="btn btn-google btn-full" onclick="handleLoginGoogle()">
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -79,15 +74,28 @@
 
   </div>
 
-  <!-- Modal: Link Google (muncul saat pertama kali login Google) -->
+  <!-- Modal: Link Google -->
   <div id="modal-link" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;min-height:400px;align-items:center;justify-content:center;">
     <div class="card" style="max-width:380px;width:90%;margin:1rem;">
-      <h3 style="margin-bottom:8px;">Hubungkan Akun Google</h3>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <h3 style="margin:0;">Hubungkan Akun Google</h3>
+        <button
+          onclick="tutupModalLink()"
+          style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;align-items:center;"
+          aria-label="Tutup"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
       <p style="font-size:0.875rem;margin-bottom:1.25rem;">
         Masukkan 5 digit terakhir NIP lama untuk menghubungkan akun Google kamu.
         Hanya perlu dilakukan sekali.
       </p>
+
       <div id="alert-link" class="alert alert-danger mb-4" style="display:none;"></div>
+
       <div class="form-group">
         <label class="form-label">5 Digit Terakhir NIP Lama</label>
         <input
@@ -99,9 +107,15 @@
           placeholder="Contoh: 12345"
         >
       </div>
+
       <button id="btn-link" class="btn btn-primary btn-full" onclick="handleLinkGoogle()">
         Hubungkan & Masuk
       </button>
+
+      <button onclick="tutupModalLink()" class="btn btn-ghost btn-full mt-2">
+        Batal — gunakan login NIP
+      </button>
+
     </div>
   </div>
 
