@@ -31,7 +31,8 @@
   <script src="js/auth.js"></script>
   <script>
   (async () => {
-    const statusEl = document.getElementById('status-text');
+    const statusEl   = document.getElementById('status-text');
+    const afterLogin = sessionStorage.getItem('zi_after_login') || 'insight.html';
 
     try {
       const { data: { session }, error: sessionError } =
@@ -47,14 +48,17 @@
       const profil = await cekLinkGoogle();
 
       if (profil) {
+        // Sudah ter-link → redirect ke halaman asal
         statusEl.textContent = `Selamat datang, ${profil.nama}!`;
-        setTimeout(() => window.location.replace('insight.html'), 800);
+        sessionStorage.removeItem('zi_after_login');
+        setTimeout(() => window.location.replace(afterLogin), 800);
       } else {
-        // Simpan google_email ke sessionStorage sebelum signOut
-        sessionStorage.setItem('zi_google_email', session.user.email);
+        // Belum ter-link → signOut dulu, minta input NIP
         statusEl.textContent = 'Akun belum terhubung ke NIP. Mengalihkan...';
+        sessionStorage.setItem('zi_google_email', session.user.email);
         await db.auth.signOut();
         sessionStorage.setItem('zi_need_link', '1');
+        // Pertahankan zi_after_login supaya setelah link berhasil tetap redirect ke halaman asal
         setTimeout(() => window.location.replace('login.html'), 1000);
       }
 
@@ -63,6 +67,7 @@
       statusEl.textContent = 'Terjadi kesalahan. Mengalihkan...';
       await db.auth.signOut();
       sessionStorage.setItem('zi_login_error', 'unknown');
+      sessionStorage.removeItem('zi_after_login');
       setTimeout(() => window.location.replace('login.html'), 1500);
     }
   })();

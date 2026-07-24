@@ -111,9 +111,10 @@ async function handleLinkGoogle() {
   }
 
   if (success) {
-    const params   = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || 'insight.html';
-    window.location.replace(redirect);
+    const params     = new URLSearchParams(window.location.search);
+    const afterLogin = sessionStorage.getItem('zi_after_login') || params.get('redirect') || 'insight.html';
+    sessionStorage.removeItem('zi_after_login');
+    window.location.replace(afterLogin);
   }
 }
 

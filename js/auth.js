@@ -50,6 +50,12 @@ async function loginNip(nipSuffix) {
 async function loginGoogle() {
   const redirectTo = window.location.href
     .split('/').slice(0, -1).join('/') + '/google-callback.html';
+
+  // Simpan halaman asal sebelum redirect ke Google
+  const params   = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect') || 'insight.html';
+  sessionStorage.setItem('zi_after_login', redirect);
+
   const { data, error } = await db.auth.signInWithOAuth({
     provider : 'google',
     options  : { redirectTo, flowType: 'pkce' }
@@ -60,6 +66,7 @@ async function loginGoogle() {
 async function logout() {
   sessionStorage.removeItem('zi_google_email');
   sessionStorage.removeItem('zi_need_link');
+  sessionStorage.removeItem('zi_after_login');
   await db.auth.signOut();
   window.location.replace('insight.html');
 }
