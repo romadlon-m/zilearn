@@ -72,7 +72,10 @@ async function handleLogin() {
     localStorage.removeItem('zi_remembered_nip');
   }
 
-  window.location.replace('insight.html');
+  // Redirect ke halaman asal kalau ada, default ke insight
+  const params   = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect') || 'insight.html';
+  window.location.replace(redirect);
 }
 
 async function handleLoginGoogle() {
@@ -108,7 +111,9 @@ async function handleLinkGoogle() {
   }
 
   if (success) {
-    window.location.replace('insight.html');
+    const params   = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect') || 'insight.html';
+    window.location.replace(redirect);
   }
 }
 
@@ -134,7 +139,6 @@ function tutupModalLink() {
   document.getElementById('modal-link').style.display = 'none';
   document.getElementById('alert-link').style.display = 'none';
   document.getElementById('input-nip-link').value     = '';
-  // Bersihkan sessionStorage supaya tidak muncul lagi saat refresh
   sessionStorage.removeItem('zi_google_email');
   sessionStorage.removeItem('zi_need_link');
 }

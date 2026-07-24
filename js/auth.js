@@ -18,18 +18,15 @@ async function getProfil() {
   const session = await getSession();
   if (!session) return null;
 
-  // Coba by id
   const { data: byIdArr } = await db
     .from('pegawai')
     .select('*')
     .eq('id', session.user.id)
     .limit(1);
 
-    const byId = byIdArr?.[0] ?? null;
-  
+  const byId = byIdArr?.[0] ?? null;
   if (byId) return byId;
 
-  // Fallback: coba by google_email
   const googleEmail = session.user.email;
   if (!googleEmail) return null;
 
@@ -64,12 +61,16 @@ async function logout() {
   sessionStorage.removeItem('zi_google_email');
   sessionStorage.removeItem('zi_need_link');
   await db.auth.signOut();
-  window.location.replace('login.html');
+  window.location.replace('insight.html');
 }
 
 async function requireLogin() {
   const session = await getSession();
-  if (!session) window.location.replace('login.html');
+  if (!session) {
+    const params = new URLSearchParams(window.location.search);
+    const from   = params.get('redirect') || window.location.pathname.split('/').pop();
+    window.location.replace(`login.html?redirect=${from}`);
+  }
   return session;
 }
 
@@ -81,7 +82,10 @@ async function requireAdmin() {
 
 async function redirectIfLoggedIn() {
   const session = await getSession();
-  if (session) window.location.replace('insight.html');
+  if (!session) return;
+  const params   = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect') || 'insight.html';
+  window.location.replace(redirect);
 }
 
 async function getDaftarPegawai() {
@@ -123,7 +127,6 @@ async function linkGoogle(nipSuffix) {
     return { error: 'Gagal menyimpan. Coba lagi.' };
   }
 
-  // Login dengan NIP setelah berhasil link
   const { error: loginError } = await loginNip(nipSuffix);
   if (loginError) {
     return { error: 'Link berhasil tapi gagal masuk. Coba login manual dengan NIP.' };

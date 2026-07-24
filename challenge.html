@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZI Challenge — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .challenge-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .soal-nomor {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .soal-teks {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+    .pembahasan-box {
+      background: var(--primary-light);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      display: none;
+    }
+    .pembahasan-box.show { display: block; }
+    .hasil-card {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+    .hasil-skor {
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .hasil-label {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .hasil-stat {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    .hasil-stat-item {
+      text-align: center;
+    }
+    .hasil-stat-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .hasil-stat-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="challenge-wrap">
+
+      <!-- State: loading -->
+      <div id="state-loading" class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- State: butuh login -->
+      <div id="state-login" style="display:none;">
+        <div class="page-header">
+          <h1 class="page-title">ZI Challenge</h1>
+          <p class="page-subtitle">Uji pemahaman dengan kuis berbasis skenario nyata.</p>
+        </div>
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🔐</div>
+          <h3 style="margin-bottom:8px;">Masuk untuk mulai kuis</h3>
+          <p style="margin-bottom:1.5rem;font-size:0.9375rem;">
+            ZI Challenge memerlukan akun untuk menyimpan progres dan nilai kamu.
+          </p>
+          <a href="login.html?redirect=challenge.html" class="btn btn-primary">Masuk Sekarang</a>
+        </div>
+      </div>
+
+      <!-- State: pilih kuis -->
+      <div id="state-pilih" style="display:none;">
+        <div class="page-header">
+          <h1 class="page-title">ZI Challenge</h1>
+          <p class="page-subtitle">Uji pemahaman dengan kuis berbasis skenario nyata.</p>
+        </div>
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
+          <h3 style="margin-bottom:8px;">Siap menghadapi tantangan?</h3>
+          <p style="margin-bottom:4px;font-size:0.9375rem;">
+            Kuis terdiri dari <strong id="jumlah-soal-info">—</strong> soal acak dari berbagai pilar ZI.
+          </p>
+          <p style="margin-bottom:1.5rem;font-size:0.875rem;color:var(--muted);">
+            Jawab dengan jujur — pembahasan akan muncul setelah setiap soal.
+          </p>
+          <button class="btn btn-primary btn-lg" onclick="mulaiKuis()">Mulai Kuis</button>
+        </div>
+      </div>
+
+      <!-- State: mengerjakan kuis -->
+      <div id="state-kuis" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <h2 style="font-size:1rem;margin:0;">ZI Challenge</h2>
+          <span id="kuis-progress-label" style="font-size:0.875rem;color:var(--muted);"></span>
+        </div>
+
+        <div class="quiz-progress">
+          <div class="quiz-progress-bar" id="progress-bar" style="width:0%"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem;">
+          <div class="soal-nomor" id="soal-nomor"></div>
+          <div class="soal-teks" id="soal-teks"></div>
+          <div id="opsi-container"></div>
+          <div class="pembahasan-box" id="pembahasan-box">
+            <strong>Pembahasan:</strong> <span id="pembahasan-teks"></span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;">
+          <button id="btn-lanjut" class="btn btn-primary" style="display:none;" onclick="soalBerikutnya()">
+            Soal Berikutnya →
+          </button>
+          <button id="btn-selesai" class="btn btn-accent" style="display:none;" onclick="selesaikanKuis()">
+            Lihat Hasil ✓
+          </button>
+        </div>
+      </div>
+
+      <!-- State: hasil -->
+      <div id="state-hasil" style="display:none;">
+        <div class="card hasil-card">
+          <div class="hasil-skor" id="hasil-skor" style="color:var(--primary);">—</div>
+          <div class="hasil-label">dari 100</div>
+          <div class="hasil-stat">
+            <div class="hasil-stat-item">
+              <div class="hasil-stat-val" id="hasil-benar">—</div>
+              <div class="hasil-stat-lbl">Jawaban Benar</div>
+            </div>
+            <div class="hasil-stat-item">
+              <div class="hasil-stat-val" id="hasil-salah">—</div>
+              <div class="hasil-stat-lbl">Jawaban Salah</div>
+            </div>
+            <div class="hasil-stat-item">
+              <div class="hasil-stat-val" id="hasil-total">—</div>
+              <div class="hasil-stat-lbl">Total Soal</div>
+            </div>
+          </div>
+          <p id="hasil-pesan" style="color:var(--text-secondary);margin-bottom:1.5rem;"></p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="mulaiKuis()">Kuis Lagi</button>
+            <a href="riwayat.html" class="btn btn-outline">Lihat Riwayat</a>
+          </div>
+        </div>
+
+        <!-- Review jawaban -->
+        <h3 style="margin:1.5rem 0 1rem;font-size:1rem;">Review Jawaban</h3>
+        <div id="review-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+let soalList     = [];
+let soalAktif    = 0;
+let jawaban      = [];
+let sesiPegawai  = null;
+
+(async () => {
+  await loadSidebar('challenge');
+
+  const session = await getSession();
+
+  if (!session) {
+    tampilState('login');
+    return;
+  }
+
+  sesiPegawai = await getProfil();
+  await muatSoal();
+})();
+
+/* ── Muat soal dari Sheets ───────────────────────────────── */
+async function muatSoal() {
+  tampilState('loading');
+  try {
+    const res  = await fetch(CONFIG.SHEETS_SOAL);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const valid = rows.filter(r => r.soal && r.opsi_a && r.opsi_b && r.jawaban);
+    if (valid.length === 0) {
+      tampilState('login');
+      return;
+    }
+
+    // Acak dan ambil sejumlah QUIZ_JUMLAH_SOAL
+    soalList = acak(valid).slice(0, CONFIG.QUIZ_JUMLAH_SOAL);
+    document.getElementById('jumlah-soal-info').textContent = soalList.length;
+    tampilState('pilih');
+
+  } catch (e) {
+    console.error(e);
+    tampilState('login');
+  }
+}
+
+/* ── Mulai kuis ──────────────────────────────────────────── */
+function mulaiKuis() {
+  soalAktif = 0;
+  jawaban   = [];
+  // Acak ulang soal setiap kuis baru
+  soalList  = acak(soalList);
+  tampilState('kuis');
+  renderSoal();
+}
+
+/* ── Render soal aktif ───────────────────────────────────── */
+function renderSoal() {
+  const soal    = soalList[soalAktif];
+  const total   = soalList.length;
+  const nomor   = soalAktif + 1;
+  const persen  = Math.round((soalAktif / total) * 100);
+
+  document.getElementById('soal-nomor').textContent          = `Soal ${nomor} dari ${total}`;
+  document.getElementById('kuis-progress-label').textContent = `${nomor} / ${total}`;
+  document.getElementById('soal-teks').textContent           = soal.soal;
+  document.getElementById('progress-bar').style.width        = `${persen}%`;
+  document.getElementById('pembahasan-box').classList.remove('show');
+  document.getElementById('btn-lanjut').style.display        = 'none';
+  document.getElementById('btn-selesai').style.display       = 'none';
+
+  // Bangun opsi
+  const opsiContainer = document.getElementById('opsi-container');
+  opsiContainer.innerHTML = '';
+
+  const opsiMap = { a: soal.opsi_a, b: soal.opsi_b, c: soal.opsi_c, d: soal.opsi_d };
+  const opsiTampil = Object.entries(opsiMap).filter(([, v]) => v && v.trim());
+
+  // Acak urutan opsi kecuali BenarSalah
+  const opsiAcak = soal.tipe === 'BenarSalah' ? opsiTampil : acak(opsiTampil);
+
+  opsiAcak.forEach(([key, teks]) => {
+    const btn = document.createElement('button');
+    btn.className    = 'quiz-option';
+    btn.dataset.key  = key;
+    btn.innerHTML    = `
+      <span class="quiz-option-key">${key.toUpperCase()}</span>
+      <span>${teks}</span>
+    `;
+    btn.onclick = () => pilihJawaban(key, btn);
+    opsiContainer.appendChild(btn);
+  });
+}
+
+/* ── Pilih jawaban ───────────────────────────────────────── */
+function pilihJawaban(key, btnEl) {
+  const soal   = soalList[soalAktif];
+  const benar  = key === soal.jawaban;
+
+  // Disable semua opsi
+  document.querySelectorAll('.quiz-option').forEach(b => {
+    b.onclick = null;
+    b.style.cursor = 'default';
+    if (b.dataset.key === soal.jawaban) b.classList.add('correct');
+    if (b === btnEl && !benar)          b.classList.add('wrong');
+    if (b === btnEl && benar)           b.classList.add('selected');
+  });
+
+  // Simpan jawaban
+  jawaban.push({
+    soal_id : soal.id,
+    jawaban : key,
+    benar,
+    nilai   : benar ? Math.round(100 / soalList.length) : 0,
+    soal    : soal.soal,
+    jawaban_benar: soal.jawaban,
+    opsi_benar: soal[`opsi_${soal.jawaban}`],
+    pembahasan: soal.pembahasan,
+    tipe    : soal.tipe,
+  });
+
+  // Tampilkan pembahasan
+  document.getElementById('pembahasan-teks').textContent = soal.pembahasan || 'Tidak ada pembahasan.';
+  document.getElementById('pembahasan-box').classList.add('show');
+
+  // Tombol lanjut / selesai
+  const isLast = soalAktif === soalList.length - 1;
+  if (isLast) {
+    document.getElementById('btn-selesai').style.display = 'inline-flex';
+  } else {
+    document.getElementById('btn-lanjut').style.display = 'inline-flex';
+  }
+}
+
+/* ── Soal berikutnya ─────────────────────────────────────── */
+function soalBerikutnya() {
+  soalAktif++;
+  renderSoal();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Selesaikan kuis & simpan ke Supabase ────────────────── */
+async function selesaikanKuis() {
+  document.getElementById('btn-selesai').disabled    = true;
+  document.getElementById('btn-selesai').textContent = 'Menyimpan...';
+
+  // Hitung hasil
+  const totalBenar = jawaban.filter(j => j.benar).length;
+  const totalSalah = jawaban.length - totalBenar;
+  const skor       = Math.round((totalBenar / jawaban.length) * 100);
+
+  // Simpan ke Supabase
+  if (sesiPegawai) {
+    const rows = jawaban.map(j => ({
+      pegawai_id : sesiPegawai.id,
+      soal_id    : j.soal_id,
+      jawaban    : j.jawaban,
+      benar      : j.benar,
+      nilai      : j.nilai,
+    }));
+
+    const { error } = await db.from('riwayat_kuis').insert(rows);
+    if (error) console.error('Gagal simpan riwayat:', error.message);
+  }
+
+  // Tampilkan hasil
+  tampilHasil(skor, totalBenar, totalSalah);
+}
+
+/* ── Tampilkan halaman hasil ─────────────────────────────── */
+function tampilHasil(skor, benar, salah) {
+  document.getElementById('hasil-skor').textContent  = skor;
+  document.getElementById('hasil-benar').textContent = benar;
+  document.getElementById('hasil-salah').textContent = salah;
+  document.getElementById('hasil-total').textContent = jawaban.length;
+
+  // Warna skor berdasarkan nilai
+  const skorEl = document.getElementById('hasil-skor');
+  if (skor >= 80)      skorEl.style.color = 'var(--success)';
+  else if (skor >= 60) skorEl.style.color = 'var(--warning)';
+  else                 skorEl.style.color = 'var(--danger)';
+
+  // Pesan motivasi
+  const pesan = skor >= 80
+    ? '🎉 Luar biasa! Pemahaman ZI kamu sangat baik.'
+    : skor >= 60
+    ? '👍 Cukup baik! Terus tingkatkan pemahamanmu.'
+    : '💪 Jangan menyerah! Pelajari lagi materinya dan coba kuis baru.';
+  document.getElementById('hasil-pesan').textContent = pesan;
+
+  // Review jawaban
+  const reviewEl = document.getElementById('review-container');
+  reviewEl.innerHTML = '';
+  jawaban.forEach((j, i) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.borderLeft = `4px solid ${j.benar ? 'var(--success)' : 'var(--danger)'}`;
+    div.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.25rem;">${j.benar ? '✓' : '✗'}</span>
+        <div style="flex:1;">
+          <div style="font-size:0.875rem;font-weight:600;color:var(--text);margin-bottom:6px;">
+            ${i + 1}. ${j.soal}
+          </div>
+          ${!j.benar ? `<div style="font-size:0.8125rem;color:var(--danger);margin-bottom:4px;">
+            Jawaban kamu: ${j.jawaban.toUpperCase()}
+          </div>` : ''}
+          <div style="font-size:0.8125rem;color:var(--success);margin-bottom:6px;">
+            Jawaban benar: ${j.jawaban_benar.toUpperCase()} — ${j.opsi_benar}
+          </div>
+          ${j.pembahasan ? `<div style="font-size:0.8125rem;color:var(--text-secondary);
+            background:var(--surface);padding:8px 10px;border-radius:6px;">
+            ${j.pembahasan}
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+    reviewEl.appendChild(div);
+  });
+
+  tampilState('hasil');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── Helper: tampil state ────────────────────────────────── */
+function tampilState(state) {
+  ['loading', 'login', 'pilih', 'kuis', 'hasil'].forEach(s => {
+    document.getElementById(`state-${s}`).style.display = s === state ? 'block' : 'none';
+  });
+}
+
+/* ── Helper: acak array ──────────────────────────────────── */
+function acak(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+/* ── Parse CSV ───────────────────────────────────────────── */
+function parseCSV(text) {
+  const lines  = text.trim().split('\n');
+  const header = parseCSVRow(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVRow(line);
+    const obj  = {};
+    header.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+    return obj;
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+function parseCSVRow(row) {
+  const result = [];
+  let current  = '';
+  let inQuotes = false;
+  for (let i = 0; i < row.length; i++) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+</script>
+
+</body>
+</html>
