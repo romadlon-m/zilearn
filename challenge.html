@@ -270,12 +270,12 @@ function renderSoal() {
   // Acak urutan opsi kecuali BenarSalah
   const opsiAcak = soal.tipe === 'BenarSalah' ? opsiTampil : acak(opsiTampil);
 
-  opsiAcak.forEach(([key, teks]) => {
+  opsiAcak.forEach(([key, teks], idx) => {
     const btn = document.createElement('button');
     btn.className    = 'quiz-option';
     btn.dataset.key  = key;
     btn.innerHTML    = `
-      <span class="quiz-option-key">${key.toUpperCase()}</span>
+      <span class="quiz-option-key">${idx + 1}</span>
       <span>${teks}</span>
     `;
     btn.onclick = () => pilihJawaban(key, btn);

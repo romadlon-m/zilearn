@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riwayat — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .riwayat-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.125rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .riwayat-skor {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .riwayat-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .riwayat-sesi {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .riwayat-detail {
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+    .riwayat-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 99px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">Riwayat Pembelajaran</h1>
+      <p class="page-subtitle">Rekap kuis yang sudah kamu kerjakan.</p>
+    </div>
+
+    <!-- Stat ringkasan -->
+    <div class="grid-4 mb-6" id="stat-container">
+      <div class="stat-card">
+        <div class="stat-label">Total Sesi Kuis</div>
+        <div class="stat-value" id="stat-sesi">—</div>
+        <div class="stat-sub">sesi selesai</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rata-rata Nilai</div>
+        <div class="stat-value" id="stat-avg">—</div>
+        <div class="stat-sub">dari 100</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Benar</div>
+        <div class="stat-value" id="stat-benar">—</div>
+        <div class="stat-sub">dari semua soal</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Nilai Tertinggi</div>
+        <div class="stat-value" id="stat-tertinggi">—</div>
+        <div class="stat-sub">skor terbaik</div>
+      </div>
+    </div>
+
+    <!-- List riwayat -->
+    <h2 style="font-size:1rem;margin-bottom:1rem;">Riwayat Kuis</h2>
+    <div id="riwayat-list">
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async () => {
+  await loadSidebar('riwayat');
+  await requireLogin();
+  await muatRiwayat();
+})();
+
+async function muatRiwayat() {
+  const listEl  = document.getElementById('riwayat-list');
+  const profil  = await getProfil();
+  if (!profil) return;
+
+  const { data: riwayat, error } = await db
+    .from('riwayat_kuis')
+    .select('*')
+    .eq('pegawai_id', profil.id)
+    .order('waktu', { ascending: false });
+
+  if (error) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Gagal memuat riwayat</div>
+      </div>`;
+    return;
+  }
+
+  if (!riwayat || riwayat.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Belum ada riwayat kuis</div>
+        <div class="empty-state-sub">Selesaikan kuis pertamamu di ZI Challenge.</div>
+        <a href="challenge.html" class="btn btn-primary" style="margin-top:1rem;">Mulai Kuis</a>
+      </div>`;
+    tampilStat(0, 0, 0, 0);
+    return;
+  }
+
+  // Kelompokkan per sesi berdasarkan waktu (soal dalam 5 menit = 1 sesi)
+  const sesi = kelompokkanSesi(riwayat);
+
+  // Hitung statistik
+  const totalSesi     = sesi.length;
+  const totalBenar    = riwayat.filter(r => r.benar).length;
+  const nilaiPerSesi  = sesi.map(s => hitungNilaiSesi(s));
+  const avgNilai      = Math.round(nilaiPerSesi.reduce((a, b) => a + b, 0) / totalSesi);
+  const nilaiTertinggi = Math.max(...nilaiPerSesi);
+
+  tampilStat(totalSesi, avgNilai, totalBenar, nilaiTertinggi);
+  renderRiwayat(sesi, nilaiPerSesi);
+}
+
+function kelompokkanSesi(riwayat) {
+  // Kelompokkan soal yang dikerjakan dalam rentang 30 menit sebagai 1 sesi
+  const INTERVAL_MENIT = 30;
+  const sesi = [];
+  let sesiAktif = [riwayat[0]];
+
+  for (let i = 1; i < riwayat.length; i++) {
+    const selisih = new Date(sesiAktif[sesiAktif.length - 1].waktu) - new Date(riwayat[i].waktu);
+    if (Math.abs(selisih) <= INTERVAL_MENIT * 60 * 1000) {
+      sesiAktif.push(riwayat[i]);
+    } else {
+      sesi.push(sesiAktif);
+      sesiAktif = [riwayat[i]];
+    }
+  }
+  sesi.push(sesiAktif);
+  return sesi;
+}
+
+function hitungNilaiSesi(sesi) {
+  const benar = sesi.filter(r => r.benar).length;
+  return Math.round((benar / sesi.length) * 100);
+}
+
+function tampilStat(sesi, avg, benar, tertinggi) {
+  document.getElementById('stat-sesi').textContent      = sesi;
+  document.getElementById('stat-avg').textContent       = sesi > 0 ? avg : '—';
+  document.getElementById('stat-benar').textContent     = benar;
+  document.getElementById('stat-tertinggi').textContent = sesi > 0 ? tertinggi : '—';
+}
+
+function renderRiwayat(sesi, nilaiPerSesi) {
+  const listEl = document.getElementById('riwayat-list');
+  listEl.innerHTML = '';
+
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+  sesi.forEach((s, i) => {
+    const nilai      = nilaiPerSesi[i];
+    const benar      = s.filter(r => r.benar).length;
+    const total      = s.length;
+    const waktu      = new Date(s[0].waktu);
+    const nomorSesi  = sesi.length - i;
+
+    // Warna skor
+    const warna = nilai >= 80 ? 'var(--success)'
+                : nilai >= 60 ? 'var(--warning)'
+                : 'var(--danger)';
+
+    // Label predikat
+    const predikat = nilai >= 80 ? { label: 'Baik', cls: 'badge-success' }
+                   : nilai >= 60 ? { label: 'Cukup', cls: 'badge-warning' }
+                   : { label: 'Perlu Belajar', cls: 'badge-danger' };
+
+    const card = document.createElement('div');
+    card.className = 'riwayat-card';
+    card.innerHTML = `
+      <div class="riwayat-skor" style="background:${warna};">${nilai}</div>
+      <div class="riwayat-info">
+        <div class="riwayat-sesi">Sesi #${nomorSesi}</div>
+        <div class="riwayat-detail">
+          ${benar} dari ${total} soal benar &nbsp;·&nbsp;
+          ${waktu.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}
+          &nbsp;${waktu.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}
+        </div>
+      </div>
+      <span class="riwayat-badge badge ${predikat.cls}">${predikat.label}</span>
+    `;
+    container.appendChild(card);
+  });
+
+  listEl.appendChild(container);
+}
+</script>
+
+</body>
+</html>
