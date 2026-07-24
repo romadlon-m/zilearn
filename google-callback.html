@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memproses login — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-body">
+
+  <div class="login-card" style="text-align:center;">
+    <div class="login-logo" style="justify-content:center;">
+      <div class="login-logo-icon">ZI</div>
+      <div>
+        <div class="login-logo-text">ZI Learning</div>
+        <div class="login-logo-sub">BPS Bangka Belitung</div>
+      </div>
+    </div>
+    <div class="loading-overlay" style="padding:1.5rem 0;">
+      <div class="spinner"></div>
+    </div>
+    <p id="status-text" style="color:var(--text-secondary);font-size:0.9375rem;">
+      Memproses login Google...
+    </p>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (async () => {
+    const statusEl = document.getElementById('status-text');
+
+    try {
+      // Supabase handle PKCE exchange otomatis dari URL hash/query
+      const { data: { session }, error: sessionError } =
+        await db.auth.getSession();
+
+      if (sessionError || !session) {
+        statusEl.textContent = 'Session tidak ditemukan. Mengalihkan...';
+        setTimeout(() => window.location.replace('login.html'), 1500);
+        return;
+      }
+
+      // Cek apakah akun Google sudah ter-link ke pegawai
+      statusEl.textContent = 'Memeriksa akun...';
+      const profil = await cekLinkGoogle();
+
+      if (profil) {
+        // Sudah ter-link → langsung masuk
+        statusEl.textContent = `Selamat datang, ${profil.nama}!`;
+        setTimeout(() => window.location.replace('index.html'), 800);
+      } else {
+        // Belum ter-link → kembali ke login, tampilkan modal link NIP
+        statusEl.textContent = 'Akun belum terhubung ke NIP. Mengalihkan...';
+        sessionStorage.setItem('zi_need_link', '1');
+        setTimeout(() => window.location.replace('login.html'), 1000);
+      }
+
+    } catch (err) {
+      console.error('Callback error:', err);
+      statusEl.textContent = 'Terjadi kesalahan. Mengalihkan...';
+      sessionStorage.setItem('zi_login_error', 'unknown');
+      setTimeout(() => window.location.replace('login.html'), 1500);
+    }
+  })();
+  </script>
+
+</body>
+</html>

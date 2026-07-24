@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-name">ZI Learning</div>
+      <div class="sidebar-logo-sub">BPS Bangka Belitung</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="index.html" class="sidebar-item active">
+        <svg class="sidebar-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="insight.html" class="sidebar-item">
+        <svg class="sidebar-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        ZI Insight
+      </a>
+      <a href="challenge.html" class="sidebar-item">
+        <svg class="sidebar-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        ZI Challenge
+      </a>
+      <a href="library.html" class="sidebar-item">
+        <svg class="sidebar-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        ZI Library
+      </a>
+      <a href="riwayat.html" class="sidebar-item">
+        <svg class="sidebar-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Riwayat
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="avatar">—</div>
+        <div>
+          <div class="sidebar-user-name" id="user-nama">Memuat...</div>
+          <div class="sidebar-user-role" id="user-role"></div>
+        </div>
+      </div>
+      <button
+        onclick="logout()"
+        style="margin-top:10px;width:100%;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.7);padding:7px;border-radius:6px;font-size:0.8125rem;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;"
+      >
+        Keluar
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile nav -->
+  <div class="mobile-nav">
+    <span class="mobile-nav-title">ZI Learning</span>
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Buka menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Konten utama -->
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1 class="page-title" id="greeting">Selamat datang</h1>
+      <p class="page-subtitle">Selamat belajar dan terus jaga integritas.</p>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="grid-4 mb-6">
+      <div class="stat-card">
+        <div class="stat-label">Kuis Selesai</div>
+        <div class="stat-value" id="stat-kuis">—</div>
+        <div class="stat-sub">total sesi kuis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Rata-rata Nilai</div>
+        <div class="stat-value" id="stat-nilai">—</div>
+        <div class="stat-sub">dari 100</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Jawaban Benar</div>
+        <div class="stat-value" id="stat-benar">—</div>
+        <div class="stat-sub">total soal dijawab benar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Konten Tersedia</div>
+        <div class="stat-value" id="stat-konten">—</div>
+        <div class="stat-sub">artikel & materi</div>
+      </div>
+    </div>
+
+    <!-- Shortcut -->
+    <h2 style="font-size:1rem;margin-bottom:1rem;">Menu Utama</h2>
+    <div class="grid-3">
+
+      <a href="insight.html" class="card card-hover" style="text-decoration:none;">
+        <div style="width:40px;height:40px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </div>
+        <h3 style="font-size:0.9375rem;margin-bottom:4px;">ZI Insight</h3>
+        <p style="font-size:0.8125rem;">Materi pembelajaran singkat seputar Zona Integritas.</p>
+      </a>
+
+      <a href="challenge.html" class="card card-hover" style="text-decoration:none;">
+        <div style="width:40px;height:40px;background:var(--accent-light);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3 style="font-size:0.9375rem;margin-bottom:4px;">ZI Challenge</h3>
+        <p style="font-size:0.8125rem;">Uji pemahaman dengan kuis berbasis skenario nyata.</p>
+      </a>
+
+      <a href="library.html" class="card card-hover" style="text-decoration:none;">
+        <div style="width:40px;height:40px;background:#f0f2f7;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3 style="font-size:0.9375rem;margin-bottom:4px;">ZI Library</h3>
+        <p style="font-size:0.8125rem;">Arsip konten dan infografis yang sudah dibagikan.</p>
+      </a>
+
+    </div>
+
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async () => {
+  // Guard login
+  await requireLogin();
+
+  // Muat profil
+  const profil = await getProfil();
+  if (profil) {
+    const inisial = getInisial(profil.nama);
+    document.getElementById('avatar').textContent    = inisial;
+    document.getElementById('user-nama').textContent = profil.nama;
+    document.getElementById('user-role').textContent =
+      profil.role === CONFIG.ROLE_ADMIN ? 'Admin' : 'Pegawai';
+
+    const jam = new Date().getHours();
+    const sapaan = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 18 ? 'Selamat sore' : 'Selamat malam';
+    document.getElementById('greeting').textContent = `${sapaan}, ${profil.nama.split(',')[0].split(' ').slice(0,2).join(' ')}`;
+  }
+
+  // Muat statistik riwayat kuis
+  const session = await getSession();
+  if (session) {
+    const { data: riwayat } = await db
+      .from('riwayat_kuis')
+      .select('nilai, benar')
+      .eq('pegawai_id', session.user.id);
+
+    if (riwayat && riwayat.length > 0) {
+      const totalSesi  = new Set(riwayat.map((r, i) => Math.floor(i / CONFIG.QUIZ_JUMLAH_SOAL))).size;
+      const avgNilai   = Math.round(riwayat.reduce((s, r) => s + (r.nilai || 0), 0) / riwayat.length);
+      const totalBenar = riwayat.filter(r => r.benar).length;
+
+      document.getElementById('stat-kuis').textContent   = riwayat.length > 0 ? totalSesi : '0';
+      document.getElementById('stat-nilai').textContent  = avgNilai || '0';
+      document.getElementById('stat-benar').textContent  = totalBenar;
+    } else {
+      document.getElementById('stat-kuis').textContent  = '0';
+      document.getElementById('stat-nilai').textContent = '0';
+      document.getElementById('stat-benar').textContent = '0';
+    }
+  }
+
+  // Hitung konten dari Sheets
+  try {
+    const res  = await fetch(CONFIG.SHEETS_KONTEN);
+    const text = await res.text();
+    const rows = text.trim().split('\n').slice(1).filter(r => r.trim());
+    document.getElementById('stat-konten').textContent = rows.length;
+  } catch {
+    document.getElementById('stat-konten').textContent = '—';
+  }
+})();
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+</script>
+
+</body>
+</html>
