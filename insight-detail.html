@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZI Insight — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .artikel-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .artikel-header {
+      margin-bottom: 1.5rem;
+    }
+    .artikel-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 1rem;
+    }
+    .artikel-back:hover { color: var(--primary); text-decoration: none; }
+    .artikel-judul {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+    .artikel-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .artikel-tanggal {
+      font-size: 0.8125rem;
+      color: var(--muted);
+    }
+
+    /* Render konten Google Docs */
+    .docs-body {
+      font-size: 0.9375rem;
+      line-height: 1.85;
+      color: var(--text-secondary);
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .docs-body h1, .docs-body h2, .docs-body h3 {
+      color: var(--text);
+      font-weight: 600;
+      margin: 1.5rem 0 0.625rem;
+      line-height: 1.35;
+    }
+    .docs-body h1 { font-size: 1.25rem; }
+    .docs-body h2 { font-size: 1.125rem; }
+    .docs-body h3 { font-size: 1rem; }
+    .docs-body p  { margin-bottom: 1rem; }
+    .docs-body ul, .docs-body ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+      list-style: revert;
+    }
+    .docs-body li { margin-bottom: 6px; }
+    .docs-body strong, .docs-body b { color: var(--text); }
+    .docs-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+    .docs-body td, .docs-body th {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    .docs-body th {
+      background: var(--surface);
+      font-weight: 600;
+      color: var(--text);
+    }
+    /* Sembunyikan elemen bawaan Google Docs yang tidak perlu */
+    .docs-body .title,
+    .docs-body .subtitle { display: none; }
+
+    .artikel-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+    <div class="artikel-wrap">
+
+      <!-- Loading -->
+      <div id="state-loading" class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Artikel -->
+      <div id="state-artikel" style="display:none;">
+        <a href="insight.html" class="artikel-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Kembali ke ZI Insight
+        </a>
+
+        <div class="artikel-header">
+          <div class="artikel-meta" style="margin-bottom:10px;">
+            <span class="badge badge-primary" id="artikel-pilar"></span>
+            <span class="artikel-tanggal" id="artikel-tanggal"></span>
+          </div>
+          <h1 class="artikel-judul" id="artikel-judul"></h1>
+        </div>
+
+        <!-- Konten dari Google Docs -->
+        <div class="docs-body" id="docs-body">
+          <div class="loading-overlay"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Navigasi bawah -->
+        <div class="artikel-nav">
+          <a href="insight.html" class="btn btn-ghost">
+            ← Semua Artikel
+          </a>
+          <a href="challenge.html" class="btn btn-primary">
+            Coba ZI Challenge →
+          </a>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="state-error" style="display:none;">
+        <a href="insight.html" class="artikel-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Kembali ke ZI Insight
+        </a>
+        <div class="empty-state">
+          <div class="empty-state-icon">⚠️</div>
+          <div class="empty-state-title" id="error-judul">Artikel tidak ditemukan</div>
+          <div class="empty-state-sub" id="error-sub"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async () => {
+  await loadSidebar('insight');
+
+  // Ambil ID artikel dari URL
+  const params    = new URLSearchParams(window.location.search);
+  const artikelId = params.get('id');
+
+  if (!artikelId) {
+    tampilError('Artikel tidak ditemukan', 'Parameter ID tidak tersedia.');
+    return;
+  }
+
+  await muatArtikel(artikelId);
+})();
+
+async function muatArtikel(id) {
+  try {
+    const res  = await fetch(CONFIG.SHEETS_INSIGHT);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const artikel = rows.find(r => String(r.id) === String(id));
+
+    if (!artikel) {
+      tampilError('Artikel tidak ditemukan', 'ID artikel tidak ada di database.');
+      return;
+    }
+
+    // Isi header
+    document.getElementById('artikel-pilar').textContent   = namaPilar(artikel.pilar);
+    document.getElementById('artikel-tanggal').textContent = formatTanggal(artikel.tanggal);
+    document.getElementById('artikel-judul').textContent   = artikel.judul;
+    document.title = `${artikel.judul} — ZI Learning`;
+
+    document.getElementById('state-loading').style.display = 'none';
+    document.getElementById('state-artikel').style.display = 'block';
+
+    // Fetch konten dari Google Docs
+    await muatKontenDocs(artikel.link_docs);
+
+  } catch (e) {
+    console.error(e);
+    tampilError('Gagal memuat artikel', 'Periksa koneksi internet dan coba lagi.');
+  }
+}
+
+async function muatKontenDocs(docsUrl) {
+  const docsEl = document.getElementById('docs-body');
+
+  try {
+    const htmlUrl = docsToHtmlUrl(docsUrl);
+    if (!htmlUrl) throw new Error('URL Docs tidak valid');
+
+    const res  = await fetch(htmlUrl);
+    const html = await res.text();
+
+    // Ekstrak body dari HTML Google Docs
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+    const body   = doc.body;
+
+    // Hapus elemen tidak perlu
+    body.querySelectorAll('style, script').forEach(el => el.remove());
+
+    // Sanitasi dengan DOMPurify
+    const bersih = DOMPurify.sanitize(body.innerHTML, {
+      ALLOWED_TAGS: ['p','h1','h2','h3','h4','ul','ol','li','strong','em','b','i',
+                     'u','a','table','thead','tbody','tr','td','th','br','span','div','hr'],
+      ALLOWED_ATTR: ['href','target','style','class'],
+    });
+
+    docsEl.innerHTML = bersih;
+
+  } catch (e) {
+    console.error('Gagal fetch Docs:', e);
+    docsEl.innerHTML = `
+      <div class="alert alert-warning">
+        Gagal memuat konten artikel. Pastikan dokumen sudah di-share
+        <strong>"Anyone with the link can view"</strong>.
+        <br><br>
+        <a href="${docsUrl}" target="_blank" class="btn btn-outline btn-sm"
+           style="margin-top:8px;">Buka di Google Docs</a>
+      </div>`;
+  }
+}
+
+function tampilError(judul, sub) {
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-error').style.display   = 'block';
+  document.getElementById('error-judul').textContent     = judul;
+  document.getElementById('error-sub').textContent       = sub;
+}
+</script>
+
+</body>
+</html>

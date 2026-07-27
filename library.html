@@ -30,22 +30,20 @@
     .library-card-img {
       width: 100%;
       aspect-ratio: 1 / 1;
-      object-fit: cover;
       background: var(--surface);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--muted);
       font-size: 0.8125rem;
+      overflow: hidden;
     }
     .library-card-img img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    .library-card-body {
-      padding: 0.875rem;
-    }
+    .library-card-body { padding: 0.875rem; }
     .library-card-title {
       font-size: 0.875rem;
       font-weight: 600;
@@ -58,10 +56,7 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .library-card-date {
-      font-size: 0.75rem;
-      color: var(--muted);
-    }
+    .library-card-date { font-size: 0.75rem; color: var(--muted); }
 
     /* Modal gambar */
     .modal-backdrop {
@@ -75,16 +70,8 @@
       padding: 1rem;
     }
     .modal-backdrop.open { display: flex; }
-    .modal-img-wrap {
-      position: relative;
-      max-width: 600px;
-      width: 100%;
-    }
-    .modal-img-wrap img {
-      width: 100%;
-      border-radius: var(--radius-lg);
-      display: block;
-    }
+    .modal-img-wrap { position: relative; max-width: 600px; width: 100%; }
+    .modal-img-wrap img { width: 100%; border-radius: var(--radius-lg); display: block; }
     .modal-img-caption {
       color: #fff;
       text-align: center;
@@ -94,27 +81,15 @@
     }
     .modal-close {
       position: absolute;
-      top: -12px;
-      right: -12px;
+      top: -12px; right: -12px;
       background: #fff;
       border: none;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       color: var(--text);
       box-shadow: var(--shadow);
-    }
-
-    /* Filter tipe */
-    .filter-section {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 1.25rem;
     }
   </style>
 </head>
@@ -126,27 +101,25 @@
   <main class="main-content">
     <div class="page-header">
       <h1 class="page-title">ZI Library</h1>
-      <p class="page-subtitle">Arsip konten dan infografis yang sudah dibagikan.</p>
+      <p class="page-subtitle">Arsip konten dan infografis ZI Daily yang sudah dibagikan.</p>
     </div>
 
-    <!-- Filter tipe konten -->
-    <div class="filter-section" id="filter-tipe">
-      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua', 'tipe', this)">Semua</button>
-      <button class="filter-chip" data-filter="MythFact" onclick="filterLibrary('MythFact', 'tipe', this)">Myth vs Fact</button>
-      <button class="filter-chip" data-filter="TahukahKamu" onclick="filterLibrary('TahukahKamu', 'tipe', this)">Tahukah Kamu</button>
-      <button class="filter-chip" data-filter="TipsIntegritas" onclick="filterLibrary('TipsIntegritas', 'tipe', this)">Tips Integritas</button>
+    <!-- Filter tipe -->
+    <div class="filter-bar" id="filter-tipe">
+      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua','tipe',this)">Semua</button>
+      <button class="filter-chip" data-filter="MythFact" onclick="filterLibrary('MythFact','tipe',this)">Myth vs Fact</button>
+      <button class="filter-chip" data-filter="TahukahKamu" onclick="filterLibrary('TahukahKamu','tipe',this)">Tahukah Kamu</button>
+      <button class="filter-chip" data-filter="TipsIntegritas" onclick="filterLibrary('TipsIntegritas','tipe',this)">Tips Integritas</button>
     </div>
 
     <!-- Filter pilar -->
-    <div class="filter-section" id="filter-pilar">
-      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua', 'pilar', this)">Semua Pilar</button>
+    <div class="filter-bar" id="filter-pilar">
+      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua','pilar',this)">Semua Pilar</button>
     </div>
 
-    <!-- Grid konten -->
     <div id="library-grid">
       <div class="loading-overlay"><div class="spinner"></div></div>
     </div>
-
   </main>
 </div>
 
@@ -167,9 +140,9 @@
 <script src="js/auth.js"></script>
 <script src="js/sidebar.js"></script>
 <script>
-let semuaKonten  = [];
-let filterTipe   = 'semua';
-let filterPilar  = 'semua';
+let semuaKonten = [];
+let filterTipe  = 'semua';
+let filterPilar = 'semua';
 
 (async () => {
   await loadSidebar('library');
@@ -178,15 +151,13 @@ let filterPilar  = 'semua';
 
 async function muatLibrary() {
   const gridEl = document.getElementById('library-grid');
-
   try {
-    const res  = await fetch(CONFIG.SHEETS_KONTEN);
+    const res  = await fetch(CONFIG.SHEETS_LIBRARY);
     const text = await res.text();
     const rows = parseCSV(text);
 
-    // Hanya konten Library (bukan Artikel)
     semuaKonten = rows
-      .filter(r => r.tipe && r.tipe !== 'Artikel' && r.judul)
+      .filter(r => r.tipe && r.judul)
       .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
     if (semuaKonten.length === 0) {
@@ -199,7 +170,6 @@ async function muatLibrary() {
       return;
     }
 
-    // Bangun filter pilar dinamis
     bangunFilterPilar(semuaKonten);
     renderLibrary();
 
@@ -221,7 +191,7 @@ function bangunFilterPilar(konten) {
     const btn = document.createElement('button');
     btn.className      = 'filter-chip';
     btn.dataset.filter = pilar;
-    btn.textContent    = pilar;
+    btn.textContent    = namaPilar(pilar);
     btn.onclick        = () => filterLibrary(pilar, 'pilar', btn);
     filterBar.appendChild(btn);
   });
@@ -230,19 +200,15 @@ function bangunFilterPilar(konten) {
 function filterLibrary(nilai, jenis, btnEl) {
   if (jenis === 'tipe')  filterTipe  = nilai;
   if (jenis === 'pilar') filterPilar = nilai;
-
-  // Update chip aktif per grup
   const grupId = jenis === 'tipe' ? 'filter-tipe' : 'filter-pilar';
   document.querySelectorAll(`#${grupId} .filter-chip`).forEach(b => b.classList.remove('active'));
   btnEl.classList.add('active');
-
   renderLibrary();
 }
 
 function renderLibrary() {
   const gridEl = document.getElementById('library-grid');
   let filtered = semuaKonten;
-
   if (filterTipe  !== 'semua') filtered = filtered.filter(k => k.tipe  === filterTipe);
   if (filterPilar !== 'semua') filtered = filtered.filter(k => k.pilar === filterPilar);
 
@@ -267,25 +233,21 @@ function renderLibrary() {
   filtered.forEach(k => {
     const imgUrl = driveUrl(k.link_gambar);
     const badge  = tipeBadge[k.tipe] ?? { label: k.tipe, cls: 'badge-muted' };
-
-    const card = document.createElement('div');
+    const card   = document.createElement('div');
     card.className = 'library-card';
     card.onclick   = () => imgUrl ? bukaModal(imgUrl, k.judul) : null;
-
     card.innerHTML = `
       <div class="library-card-img">
         ${imgUrl
           ? `<img src="${imgUrl}" alt="${k.judul}"
-      onerror="this.parentElement.innerHTML='<span>Gambar tidak tersedia</span>'">`
-          : '<span>Belum ada gambar</span>'
-        }
+                  onerror="this.parentElement.innerHTML='<span>Gambar tidak tersedia</span>'">`
+          : '<span>Belum ada gambar</span>'}
       </div>
       <div class="library-card-body">
         <span class="badge ${badge.cls}" style="margin-bottom:6px;">${badge.label}</span>
         <div class="library-card-title">${k.judul}</div>
         <div class="library-card-date">${formatTanggal(k.tanggal)}</div>
-      </div>
-    `;
+      </div>`;
     grid.appendChild(card);
   });
 
@@ -293,7 +255,7 @@ function renderLibrary() {
 }
 
 function bukaModal(imgUrl, judul) {
-  document.getElementById('modal-img-src').src       = imgUrl;
+  document.getElementById('modal-img-src').src             = imgUrl;
   document.getElementById('modal-img-caption').textContent = judul;
   document.getElementById('modal-gambar').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -309,37 +271,6 @@ document.getElementById('modal-gambar').addEventListener('click', function(e) {
   if (e.target === this) tutupModal();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupModal(); });
-
-/* ── Parse CSV ───────────────────────────────────────────── */
-function parseCSV(text) {
-  const lines  = text.trim().split('\n');
-  const header = parseCSVRow(lines[0]);
-  return lines.slice(1).map(line => {
-    const vals = parseCSVRow(line);
-    const obj  = {};
-    header.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
-    return obj;
-  }).filter(r => Object.values(r).some(v => v));
-}
-
-function parseCSVRow(row) {
-  const result = [];
-  let current  = '';
-  let inQuotes = false;
-  for (let i = 0; i < row.length; i++) {
-    const ch = row[i];
-    if (ch === '"') {
-      if (inQuotes && row[i+1] === '"') { current += '"'; i++; }
-      else inQuotes = !inQuotes;
-    } else if (ch === ',' && !inQuotes) {
-      result.push(current); current = '';
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current);
-  return result;
-}
 </script>
 
 </body>
