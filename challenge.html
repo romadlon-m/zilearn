@@ -133,20 +133,6 @@
           <div class="saran-links" id="saran-links"></div>
         </div>
 
-        <!-- Card draft tersimpan -->
-        <div id="draft-card" style="display:none;" class="card" style="margin-bottom:1rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-            <div>
-              <div style="font-size:0.9375rem;font-weight:600;color:var(--text);">Ada kuis yang belum selesai</div>
-              <div style="font-size:0.8125rem;color:var(--muted);" id="draft-info"></div>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary btn-sm" onclick="lanjutDraft()">Lanjutkan</button>
-              <button class="btn btn-ghost btn-sm" onclick="hapusDraft()">Mulai Baru</button>
-            </div>
-          </div>
-        </div>
-
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;" id="card-mulai">
           <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
           <h3 style="margin-bottom:8px;">Siap menghadapi tantangan?</h3>
@@ -363,14 +349,11 @@ function cekDraft() {
   const raw = localStorage.getItem(DRAFT_KEY);
   if (!raw) return;
   try {
-    const draft   = JSON.parse(raw);
+    const draft     = JSON.parse(raw);
     const usiaMenit = (Date.now() - draft.waktu) / 1000 / 60;
     if (usiaMenit > 60 * 24) { localStorage.removeItem(DRAFT_KEY); return; } // expired 24 jam
-    const draftCard = document.getElementById('draft-card');
-    document.getElementById('draft-info').textContent =
-      `Soal ${draft.soalAktif + 1} dari ${draft.soalList.length} — ${Math.round(usiaMenit)} menit lalu`;
-    draftCard.style.display  = 'block';
-    document.getElementById('card-mulai').style.display = 'none';
+    // Auto-lanjut draft tanpa konfirmasi
+    lanjutDraft();
   } catch { localStorage.removeItem(DRAFT_KEY); }
 }
 
@@ -379,16 +362,16 @@ function lanjutDraft() {
   if (!raw) return;
   const draft = JSON.parse(raw);
   soalList  = draft.soalList;
-  soalAktif = draft.soalAktif;
   jawaban   = draft.jawaban;
+  // Gunakan panjang jawaban sebagai index soal berikutnya
+  // supaya tidak mengulang soal yang sudah dijawab
+  soalAktif = draft.jawaban.length;
   tampilState('kuis');
   renderSoal();
 }
 
 function hapusDraft() {
   localStorage.removeItem(DRAFT_KEY);
-  document.getElementById('draft-card').style.display  = 'none';
-  document.getElementById('card-mulai').style.display  = 'block';
 }
 
 /* ── Mulai kuis baru ─────────────────────────────────────── */
