@@ -60,6 +60,15 @@ function docsToHtmlUrl(docsUrl) {
     : '';
 }
 
+/* ── Helper: konversi URL Google Docs ke embed URL (iframe) ─ */
+function docsToEmbedUrl(docsUrl) {
+  if (!docsUrl) return '';
+  const match = docsUrl.match(/\/d\/([^/]+)\//);
+  return match
+    ? `https://docs.google.com/document/d/${match[1]}/preview`
+    : '';
+}
+
 /* ── Helper: format tanggal Indonesia ───────────────────── */
 // Mendukung format DD/MM/YYYY dan YYYY-MM-DD
 function formatTanggal(dateStr) {
