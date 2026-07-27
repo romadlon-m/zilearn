@@ -61,9 +61,9 @@ async function renderSidebarFooter() {
 
   footer.innerHTML = `
     <div class="sidebar-user">
-      <div class="sidebar-avatar">${inisial}</div>
-      <div>
-        <div class="sidebar-user-name">${nama}</div>
+      <div class="sidebar-avatar" style="flex-shrink:0;">${inisial}</div>
+      <div style="min-width:0;flex:1;">
+        <div class="sidebar-user-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nama}</div>
         <div class="sidebar-user-role">${role}</div>
       </div>
     </div>
