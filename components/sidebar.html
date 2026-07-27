@@ -4,6 +4,14 @@
    ============================================================ -->
 
 <aside class="sidebar" id="sidebar">
+  <!-- Rail toggle — hanya muncul di mobile saat sidebar collapsed -->
+  <button class="rail-toggle" id="rail-toggle" onclick="toggleSidebar()" aria-label="Buka menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
   <div class="sidebar-logo">
     <div style="display:flex;align-items:center;gap:10px;">
       <img
@@ -74,19 +82,5 @@
     <!-- Diisi oleh sidebar.js -->
   </div>
 </aside>
-
-<!-- Mobile nav -->
-<div class="mobile-nav">
-  <div class="mobile-nav-logo">
-    <img src="assets/images/Logo_ZI_Learning.png" alt="ZI Learning" style="height:36px;width:auto;">
-  </div>
-  <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Buka menu">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <line x1="3" y1="12" x2="21" y2="12"/>
-      <line x1="3" y1="18" x2="21" y2="18"/>
-    </svg>
-  </button>
-</div>
 
 <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>

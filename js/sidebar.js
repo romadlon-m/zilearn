@@ -89,6 +89,15 @@ async function renderSidebarFooter() {
 
 /* ── Toggle sidebar mobile ───────────────────────────────── */
 function toggleSidebar() {
-  document.getElementById('sidebar')?.classList.toggle('open');
-  document.getElementById('overlay')?.classList.toggle('open');
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('overlay');
+  const railBtn  = document.getElementById('rail-toggle');
+
+  sidebar?.classList.toggle('open');
+  overlay?.classList.toggle('open');
+
+  // Sembunyikan rail toggle saat sidebar terbuka supaya tidak tumpang tindih dengan logo
+  if (railBtn) {
+    railBtn.style.display = sidebar?.classList.contains('open') ? 'none' : 'flex';
+  }
 }

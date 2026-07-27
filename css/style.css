@@ -119,6 +119,8 @@ small { font-size: 0.8125rem; color: var(--muted); }
   border-bottom: 1px solid var(--sidebar-border);
 }
 
+.rail-toggle { display: none; }
+
 .sidebar-logo-img {
   height: 40px;
   width: auto;
@@ -276,9 +278,75 @@ small { font-size: 0.8125rem; color: var(--muted); }
 }
 
 @media (max-width: 768px) {
-  .mobile-nav       { display: flex; }
+  .mobile-nav       { display: none; }
   .sidebar          { transform: translateX(-100%); box-shadow: none; }
   .sidebar.open     { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .sidebar-overlay.open { display: block; }
+  .main-content     { margin-left: 0; padding: 1rem; padding-top: 1rem; }
+}
+
+/* ── Mobile collapsed sidebar (rail) ────────────────────── */
+:root { --rail-width: 48px; }
+
+@media (max-width: 768px) {
+  /* Sidebar collapsed = rail strip */
+  .sidebar {
+    width: var(--rail-width);
+    transform: none;
+    overflow: hidden;
+    transition: width 0.25s ease;
+  }
+
+  /* Sidebar open = full width */
+  .sidebar.open {
+    width: var(--sidebar-width);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Konten geser sesuai rail */
+  .main-content {
+    margin-left: var(--rail-width);
+    padding: 1rem;
+  }
+
+  /* Sembunyikan elemen sidebar kecuali toggle saat collapsed */
+  .sidebar:not(.open) .sidebar-logo,
+  .sidebar:not(.open) .sidebar-nav,
+  .sidebar:not(.open) .sidebar-footer {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sidebar.open .sidebar-logo,
+  .sidebar.open .sidebar-nav,
+  .sidebar.open .sidebar-footer {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.15s ease 0.1s;
+  }
+
+  /* Rail toggle button */
+  .rail-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: var(--rail-width);
+    height: var(--rail-width);
+    min-height: var(--rail-width);
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    margin-top: 4px;
+  }
+
+  .rail-toggle:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+  .sidebar.open .rail-toggle { display: none !important; }
+
   .sidebar-overlay.open { display: block; }
 }
 
