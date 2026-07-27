@@ -45,11 +45,20 @@ async function renderSidebarFooter() {
   if (!session) {
     // Belum login — tampilkan tombol masuk
     footer.innerHTML = `
-      <a href="login.html" class="btn btn-outline btn-full"
-         style="color:#fff;border-color:rgba(255,255,255,0.4);font-size:0.8125rem;">
+      <a href="login.html" class="btn btn-full"
+         style="background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.3);
+                font-size:0.8125rem;transition:background 0.15s;">
         Masuk
       </a>
     `;
+    // Fix hover — ganti inline karena CSS class tidak bisa override inline style
+    const btnMasuk = footer.querySelector('a');
+    btnMasuk.addEventListener('mouseenter', () => {
+      btnMasuk.style.background = 'rgba(255,255,255,0.22)';
+    });
+    btnMasuk.addEventListener('mouseleave', () => {
+      btnMasuk.style.background = 'rgba(255,255,255,0.12)';
+    });
     return;
   }
 

@@ -104,14 +104,6 @@
       <p class="page-subtitle">Arsip konten dan infografis ZI Daily yang sudah dibagikan.</p>
     </div>
 
-    <!-- Filter tipe -->
-    <div class="filter-bar" id="filter-tipe">
-      <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua','tipe',this)">Semua</button>
-      <button class="filter-chip" data-filter="MythFact" onclick="filterLibrary('MythFact','tipe',this)">Myth vs Fact</button>
-      <button class="filter-chip" data-filter="TahukahKamu" onclick="filterLibrary('TahukahKamu','tipe',this)">Tahukah Kamu</button>
-      <button class="filter-chip" data-filter="TipsIntegritas" onclick="filterLibrary('TipsIntegritas','tipe',this)">Tips Integritas</button>
-    </div>
-
     <!-- Filter pilar -->
     <div class="filter-bar" id="filter-pilar">
       <button class="filter-chip active" data-filter="semua" onclick="filterLibrary('semua','pilar',this)">Semua Pilar</button>
@@ -141,7 +133,6 @@
 <script src="js/sidebar.js"></script>
 <script>
 let semuaKonten = [];
-let filterTipe  = 'semua';
 let filterPilar = 'semua';
 
 (async () => {
@@ -198,10 +189,8 @@ function bangunFilterPilar(konten) {
 }
 
 function filterLibrary(nilai, jenis, btnEl) {
-  if (jenis === 'tipe')  filterTipe  = nilai;
   if (jenis === 'pilar') filterPilar = nilai;
-  const grupId = jenis === 'tipe' ? 'filter-tipe' : 'filter-pilar';
-  document.querySelectorAll(`#${grupId} .filter-chip`).forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`#filter-pilar .filter-chip`).forEach(b => b.classList.remove('active'));
   btnEl.classList.add('active');
   renderLibrary();
 }
@@ -209,7 +198,6 @@ function filterLibrary(nilai, jenis, btnEl) {
 function renderLibrary() {
   const gridEl = document.getElementById('library-grid');
   let filtered = semuaKonten;
-  if (filterTipe  !== 'semua') filtered = filtered.filter(k => k.tipe  === filterTipe);
   if (filterPilar !== 'semua') filtered = filtered.filter(k => k.pilar === filterPilar);
 
   if (filtered.length === 0) {
