@@ -251,7 +251,7 @@ async function muatKontenDocs(docsUrl) {
     // Hapus elemen tidak perlu dari Google Docs
     body.querySelectorAll('style, script, #header, #footer').forEach(el => el.remove());
 
-    // Sanitasi dengan DOMPurify — izinkan formatting lengkap
+    // Sanitasi dengan DOMPurify — izinkan formatting lengkap termasuk inline style
     const bersih = DOMPurify.sanitize(body.innerHTML, {
       ALLOWED_TAGS: [
         'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -262,18 +262,11 @@ async function muatKontenDocs(docsUrl) {
         'span', 'div', 'blockquote',
         'sup', 'sub',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'style', 'class', 'colspan', 'rowspan'],
-      // Izinkan style properties untuk formatting
-      ALLOWED_STYLES: {
-        '*': [
-          'font-weight', 'font-style', 'text-decoration',
-          'color', 'background-color',
-          'font-size', 'text-align',
-          'margin', 'margin-left', 'margin-right',
-          'padding', 'padding-left',
-        ]
-      },
+      ALLOWED_ATTR: ['href', 'target', 'style', 'class', 'colspan', 'rowspan', 'dir'],
+      ALLOW_UNKNOWN_PROTOCOLS: false,
       FORCE_BODY: true,
+      // Biarkan semua inline style lewat — termasuk font-weight untuk bold
+      FORBID_ATTR: [],
     });
 
     docsEl.innerHTML = bersih;
