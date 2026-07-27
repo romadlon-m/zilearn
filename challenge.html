@@ -272,9 +272,11 @@ async function muatChallenge() {
     // Tampilkan card saran baca jika ada challenge aktif
     if (challengeAktif) await tampilSaranBaca(challengeAktif);
 
-    // Cek draft tersimpan
-    cekDraft();
     tampilState('pilih');
+
+    // Cek draft setelah state pilih ditampilkan
+    // supaya lanjutDraft() bisa override state ke kuis
+    cekDraft();
 
   } catch (e) {
     console.error(e);
