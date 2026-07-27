@@ -7,10 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <style>
     .artikel-wrap {
-      max-width: 860px;
+      max-width: 720px;
       margin: 0 auto;
     }
     .artikel-back {
@@ -39,33 +40,93 @@
     }
     .artikel-tanggal { font-size: 0.8125rem; color: var(--muted); }
 
-    /* iframe container */
-    .docs-frame-wrap {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      margin-top: 1rem;
-      background: #fff;
+    /* Render konten Google Docs */
+    .docs-body {
+      font-size: 0.9375rem;
+      line-height: 1.85;
+      color: var(--text-secondary);
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
     }
-    .docs-frame {
+
+    /* Pertahankan formatting dari Google Docs */
+    .docs-body * {
+      max-width: 100%;
+    }
+    .docs-body h1 {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 1.5rem 0 0.625rem;
+      line-height: 1.35;
+    }
+    .docs-body h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 1.25rem 0 0.5rem;
+      line-height: 1.35;
+    }
+    .docs-body h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1rem 0 0.5rem;
+    }
+    .docs-body p {
+      margin-bottom: 0.875rem;
+      color: var(--text-secondary);
+    }
+    .docs-body ul, .docs-body ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1rem;
+      list-style: revert;
+    }
+    .docs-body li { margin-bottom: 6px; }
+    .docs-body strong, .docs-body b {
+      font-weight: 700;
+      color: var(--text);
+    }
+    .docs-body em, .docs-body i { font-style: italic; }
+    .docs-body u { text-decoration: underline; }
+    .docs-body a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    .docs-body table {
       width: 100%;
-      height: 80vh;
-      border: none;
-      display: block;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
     }
-    .docs-frame-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 80vh;
+    .docs-body td, .docs-body th {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .docs-body th {
       background: var(--surface);
+      font-weight: 600;
+      color: var(--text);
     }
+    .docs-body hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+    /* Sembunyikan elemen bawaan Google Docs */
+    .docs-body .title,
+    .docs-body .subtitle,
+    .docs-body #header,
+    .docs-body #footer { display: none; }
 
     .artikel-nav {
       display: flex;
       justify-content: flex-start;
-      margin-top: 1.25rem;
-      padding-top: 1.25rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
       border-top: 1px solid var(--border);
     }
   </style>
@@ -98,19 +159,9 @@
         </div>
         <h1 class="artikel-judul" id="artikel-judul"></h1>
 
-        <!-- iframe Google Docs -->
-        <div class="docs-frame-wrap">
-          <div class="docs-frame-loading" id="frame-loading">
-            <div class="spinner"></div>
-          </div>
-          <iframe
-            id="docs-frame"
-            class="docs-frame"
-            style="display:none;"
-            allowfullscreen
-            sandbox="allow-scripts allow-same-origin allow-popups"
-            title="Artikel ZI Insight"
-          ></iframe>
+        <!-- Konten dari Google Docs -->
+        <div class="docs-body" id="docs-body">
+          <div class="loading-overlay"><div class="spinner"></div></div>
         </div>
 
         <div class="artikel-nav">
@@ -167,33 +218,82 @@ async function muatArtikel(id) {
       return;
     }
 
-    // Isi header
     document.getElementById('artikel-pilar').textContent   = namaPilar(artikel.pilar);
     document.getElementById('artikel-tanggal').textContent = formatTanggal(artikel.tanggal);
     document.getElementById('artikel-judul').textContent   = artikel.judul;
     document.title = `${artikel.judul} — ZI Learning`;
 
-    // Konversi URL Docs ke embed URL
-    const embedUrl = docsToEmbedUrl(artikel.link_docs);
-    if (!embedUrl) {
-      tampilError('URL dokumen tidak valid', 'Hubungi admin untuk memperbaiki link artikel ini.');
-      return;
-    }
-
-    // Set iframe
-    const frame = document.getElementById('docs-frame');
-    frame.src   = embedUrl;
-    frame.onload = () => {
-      document.getElementById('frame-loading').style.display = 'none';
-      frame.style.display = 'block';
-    };
-
     document.getElementById('state-loading').style.display = 'none';
     document.getElementById('state-artikel').style.display = 'block';
+
+    await muatKontenDocs(artikel.link_docs);
 
   } catch (e) {
     console.error(e);
     tampilError('Gagal memuat artikel', 'Periksa koneksi internet dan coba lagi.');
+  }
+}
+
+async function muatKontenDocs(docsUrl) {
+  const docsEl = document.getElementById('docs-body');
+
+  try {
+    const htmlUrl = docsToHtmlUrl(docsUrl);
+    if (!htmlUrl) throw new Error('URL Docs tidak valid');
+
+    const res  = await fetch(htmlUrl);
+    const html = await res.text();
+
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+    const body   = doc.body;
+
+    // Hapus elemen tidak perlu dari Google Docs
+    body.querySelectorAll('style, script, #header, #footer').forEach(el => el.remove());
+
+    // Sanitasi dengan DOMPurify — izinkan formatting lengkap
+    const bersih = DOMPurify.sanitize(body.innerHTML, {
+      ALLOWED_TAGS: [
+        'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li',
+        'strong', 'b', 'em', 'i', 'u', 's', 'strike',
+        'a', 'br', 'hr',
+        'table', 'thead', 'tbody', 'tr', 'td', 'th',
+        'span', 'div', 'blockquote',
+        'sup', 'sub',
+      ],
+      ALLOWED_ATTR: ['href', 'target', 'style', 'class', 'colspan', 'rowspan'],
+      // Izinkan style properties untuk formatting
+      ALLOWED_STYLES: {
+        '*': [
+          'font-weight', 'font-style', 'text-decoration',
+          'color', 'background-color',
+          'font-size', 'text-align',
+          'margin', 'margin-left', 'margin-right',
+          'padding', 'padding-left',
+        ]
+      },
+      FORCE_BODY: true,
+    });
+
+    docsEl.innerHTML = bersih;
+
+    // Buka semua link di tab baru
+    docsEl.querySelectorAll('a').forEach(a => {
+      a.target  = '_blank';
+      a.rel     = 'noopener noreferrer';
+    });
+
+  } catch (e) {
+    console.error('Gagal fetch Docs:', e);
+    docsEl.innerHTML = `
+      <div class="alert alert-warning">
+        Gagal memuat konten artikel. Pastikan dokumen sudah di-share
+        <strong>"Anyone with the link can view"</strong>.
+        <br><br>
+        <a href="${docsUrl}" target="_blank" class="btn btn-outline btn-sm"
+           style="margin-top:8px;">Buka di Google Docs ↗</a>
+      </div>`;
   }
 }
 
