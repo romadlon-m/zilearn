@@ -13,12 +13,10 @@
 
   <div class="login-card">
 
+    <!-- Logo -->
     <div class="login-logo">
-      <div class="login-logo-icon">ZI</div>
-      <div>
-        <div class="login-logo-text">ZI Learning</div>
-        <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
-      </div>
+      <img src="assets/images/Logo_ZI_Learning.png" alt="ZI Learning">
+      <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
     </div>
 
     <h2 style="font-size:1.125rem;margin-bottom:4px;">Masuk ke Akun</h2>
@@ -46,7 +44,7 @@
       >
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;margin-bottom:1rem;">
       <label style="display:flex;align-items:center;gap:8px;font-size:0.875rem;cursor:pointer;color:var(--text-secondary);">
         <input type="checkbox" id="remember-me" style="width:15px;height:15px;accent-color:var(--primary);">
         Ingat saya
@@ -75,47 +73,26 @@
   </div>
 
   <!-- Modal: Link Google -->
-  <div id="modal-link" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;min-height:400px;align-items:center;justify-content:center;">
+  <div id="modal-link" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
     <div class="card" style="max-width:380px;width:90%;margin:1rem;">
-
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <h3 style="margin:0;">Hubungkan Akun Google</h3>
-        <button
-          onclick="tutupModalLink()"
-          style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;align-items:center;"
-          aria-label="Tutup"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <button onclick="tutupModalLink()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;" aria-label="Tutup">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
-
       <p style="font-size:0.875rem;margin-bottom:1.25rem;">
-        Masukkan 5 digit terakhir NIP lama untuk menghubungkan akun Google kamu.
-        Hanya perlu dilakukan sekali.
+        Masukkan 5 digit terakhir NIP lama untuk menghubungkan akun Google kamu. Hanya perlu dilakukan sekali.
       </p>
-
       <div id="alert-link" class="alert alert-danger mb-4" style="display:none;"></div>
-
       <div class="form-group">
         <label class="form-label">5 Digit Terakhir NIP Lama</label>
-        <input
-          type="text"
-          id="input-nip-link"
-          class="form-input"
-          maxlength="5"
-          inputmode="numeric"
-          placeholder="Contoh: 12345"
-        >
+        <input type="text" id="input-nip-link" class="form-input" maxlength="5" inputmode="numeric" placeholder="Contoh: 12345">
       </div>
-
-      <button id="btn-link" class="btn btn-primary btn-full" onclick="handleLinkGoogle()">
-        Hubungkan & Masuk
-      </button>
-
-      <button onclick="tutupModalLink()" class="btn btn-ghost btn-full mt-2">
-        Batal — gunakan login NIP
-      </button>
-
+      <button id="btn-link" class="btn btn-primary btn-full" onclick="handleLinkGoogle()">Hubungkan & Masuk</button>
+      <button onclick="tutupModalLink()" class="btn btn-ghost btn-full mt-2">Batal — gunakan login NIP</button>
     </div>
   </div>
 

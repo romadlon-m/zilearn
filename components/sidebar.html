@@ -1,13 +1,16 @@
 <!-- ============================================================
    ZI Learning — sidebar.html
    Simpan di: components/sidebar.html
-   Diload via sidebar.js ke semua halaman
    ============================================================ -->
 
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="sidebar-logo-name">ZI Learning</div>
-    <div class="sidebar-logo-sub">BPS Bangka Belitung</div>
+    <img
+      src="assets/images/Logo_ZI_Learning.png"
+      alt="ZI Learning"
+      class="sidebar-logo-img"
+    >
+    <div class="sidebar-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
   </div>
 
   <nav class="sidebar-nav">
@@ -24,6 +27,7 @@
       </svg>
       ZI Library
     </a>
+
     <!-- ZI Challenge, Riwayat, Leaderboard disembunyikan sementara — aktifkan saat siap rilis -->
     <!--
     <div class="sidebar-divider"></div>
@@ -65,7 +69,9 @@
 
 <!-- Mobile nav -->
 <div class="mobile-nav">
-  <span class="mobile-nav-title">ZI Learning</span>
+  <div class="mobile-nav-logo">
+    <img src="assets/images/Logo_ZI_Learning.png" alt="ZI Learning">
+  </div>
   <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Buka menu">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <line x1="3" y1="6" x2="21" y2="6"/>
