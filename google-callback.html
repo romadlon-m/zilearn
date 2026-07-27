@@ -16,7 +16,7 @@
       <div class="login-logo-icon">ZI</div>
       <div>
         <div class="login-logo-text">ZI Learning</div>
-        <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
+        <div class="login-logo-sub">BPS Bangka Belitung</div>
       </div>
     </div>
     <div class="loading-overlay" style="padding:1.5rem 0;">
@@ -48,10 +48,10 @@
       const profil = await cekLinkGoogle();
 
       if (profil) {
-        // Sudah ter-link → redirect ke halaman asal
+        // Sudah ter-link → cek nama_samaran dulu
         statusEl.textContent = `Selamat datang, ${profil.nama}!`;
         sessionStorage.removeItem('zi_after_login');
-        setTimeout(() => window.location.replace(afterLogin), 800);
+        setTimeout(() => redirectSetelahLogin(afterLogin), 800);
       } else {
         // Belum ter-link → signOut dulu, minta input NIP
         statusEl.textContent = 'Akun belum terhubung ke NIP. Mengalihkan...';

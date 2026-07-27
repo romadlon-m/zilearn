@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nama Samaran — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-body">
+
+  <div class="login-card" style="max-width:440px;">
+
+    <div class="login-logo">
+      <div class="login-logo-icon">ZI</div>
+      <div>
+        <div class="login-logo-text">ZI Learning</div>
+        <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
+      </div>
+    </div>
+
+    <!-- Mode: input pertama kali -->
+    <div id="mode-pertama">
+      <h2 style="font-size:1.125rem;margin-bottom:6px;">Satu langkah lagi! 🎉</h2>
+      <p style="font-size:0.875rem;margin-bottom:1.5rem;color:var(--text-secondary);">
+        Pilih nama samaran yang akan tampil di leaderboard ZI Challenge.
+        Nama ini tidak menampilkan identitas aslimu.
+      </p>
+    </div>
+
+    <!-- Mode: edit -->
+    <div id="mode-edit" style="display:none;">
+      <h2 style="font-size:1.125rem;margin-bottom:6px;">Ubah Nama Samaran</h2>
+      <p style="font-size:0.875rem;margin-bottom:1.5rem;color:var(--text-secondary);">
+        Nama samaran kamu saat ini: <strong id="nama-samaran-saat-ini">—</strong>
+      </p>
+    </div>
+
+    <div id="alert-error" class="alert alert-danger mb-4" style="display:none;"></div>
+    <div id="alert-success" class="alert alert-success mb-4" style="display:none;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Nama Samaran</label>
+      <input
+        type="text"
+        id="input-nama-samaran"
+        class="form-input"
+        maxlength="30"
+        placeholder="Contoh: Elang Besi, Si Jujur, dll."
+        autocomplete="off"
+      >
+      <div class="form-hint">
+        Maksimal 30 karakter. Tidak boleh sama dengan nama samaran pegawai lain.
+      </div>
+    </div>
+
+    <button id="btn-simpan" class="btn btn-primary btn-full" onclick="handleSimpan()">
+      Simpan & Lanjutkan
+    </button>
+
+    <!-- Tombol skip hanya untuk mode edit -->
+    <div id="wrap-kembali" style="display:none;margin-top:10px;">
+      <a href="insight.html" class="btn btn-ghost btn-full">Batal</a>
+    </div>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (async () => {
+    // Wajib login
+    const session = await getSession();
+    if (!session) {
+      window.location.replace('login.html');
+      return;
+    }
+
+    const profil = await getProfil();
+    if (!profil) {
+      window.location.replace('login.html');
+      return;
+    }
+
+    // Tentukan mode: pertama kali atau edit
+    if (profil.nama_samaran && profil.nama_samaran.trim()) {
+      // Mode edit
+      document.getElementById('mode-pertama').style.display = 'none';
+      document.getElementById('mode-edit').style.display    = 'block';
+      document.getElementById('wrap-kembali').style.display = 'block';
+      document.getElementById('nama-samaran-saat-ini').textContent = profil.nama_samaran;
+      document.getElementById('input-nama-samaran').value           = profil.nama_samaran;
+      document.getElementById('btn-simpan').textContent             = 'Simpan Perubahan';
+    }
+  })();
+
+  async function handleSimpan() {
+    const nilai = document.getElementById('input-nama-samaran').value.trim();
+    const btn   = document.getElementById('btn-simpan');
+
+    sembunyiAlert();
+
+    if (!nilai) {
+      tampilError('Nama samaran tidak boleh kosong.');
+      return;
+    }
+    if (nilai.length < 3) {
+      tampilError('Nama samaran minimal 3 karakter.');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Menyimpan...';
+
+    const { success, error } = await simpanNamaSamaran(nilai);
+
+    if (error) {
+      tampilError(error);
+      btn.disabled    = false;
+      btn.textContent = 'Simpan & Lanjutkan';
+      return;
+    }
+
+    // Cek apakah ini mode edit (ada tombol kembali)
+    const isEdit = document.getElementById('wrap-kembali').style.display !== 'none';
+
+    if (isEdit) {
+      tampilSuccess('Nama samaran berhasil diubah!');
+      document.getElementById('nama-samaran-saat-ini').textContent = nilai;
+      btn.disabled    = false;
+      btn.textContent = 'Simpan Perubahan';
+    } else {
+      // Mode pertama kali — redirect ke halaman tujuan
+      const tujuan = sessionStorage.getItem('zi_after_nama_samaran') || 'insight.html';
+      sessionStorage.removeItem('zi_after_nama_samaran');
+      window.location.replace(tujuan);
+    }
+  }
+
+  function tampilError(pesan) {
+    const el         = document.getElementById('alert-error');
+    el.textContent   = pesan;
+    el.style.display = 'flex';
+  }
+
+  function tampilSuccess(pesan) {
+    const el         = document.getElementById('alert-success');
+    el.textContent   = pesan;
+    el.style.display = 'flex';
+  }
+
+  function sembunyiAlert() {
+    document.getElementById('alert-error').style.display   = 'none';
+    document.getElementById('alert-success').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('input-nama-samaran').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSimpan();
+    });
+  });
+  </script>
+
+</body>
+</html>

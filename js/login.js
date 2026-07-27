@@ -72,10 +72,10 @@ async function handleLogin() {
     localStorage.removeItem('zi_remembered_nip');
   }
 
-  // Redirect ke halaman asal kalau ada, default ke insight
+  // Cek nama_samaran dulu sebelum redirect
   const params   = new URLSearchParams(window.location.search);
   const redirect = params.get('redirect') || 'insight.html';
-  window.location.replace(redirect);
+  await redirectSetelahLogin(redirect);
 }
 
 async function handleLoginGoogle() {
@@ -114,7 +114,7 @@ async function handleLinkGoogle() {
     const params     = new URLSearchParams(window.location.search);
     const afterLogin = sessionStorage.getItem('zi_after_login') || params.get('redirect') || 'insight.html';
     sessionStorage.removeItem('zi_after_login');
-    window.location.replace(afterLogin);
+    await redirectSetelahLogin(afterLogin);
   }
 }
 

@@ -51,7 +51,6 @@ async function loginGoogle() {
   const redirectTo = window.location.href
     .split('/').slice(0, -1).join('/') + '/google-callback.html';
 
-  // Simpan halaman asal sebelum redirect ke Google
   const params   = new URLSearchParams(window.location.search);
   const redirect = params.get('redirect') || 'insight.html';
   sessionStorage.setItem('zi_after_login', redirect);
@@ -106,7 +105,6 @@ async function getDaftarPegawai() {
 
 async function linkGoogle(nipSuffix) {
   const googleEmail = sessionStorage.getItem('zi_google_email');
-
   if (!googleEmail) {
     return { error: 'Sesi Google tidak ditemukan. Silakan login Google ulang.' };
   }
@@ -120,7 +118,6 @@ async function linkGoogle(nipSuffix) {
   if (cariError || !pegawai) {
     return { error: '5 digit NIP tidak ditemukan. Pastikan input benar.' };
   }
-
   if (pegawai.google_email) {
     return { error: 'NIP ini sudah terhubung ke akun Google lain.' };
   }
@@ -130,9 +127,7 @@ async function linkGoogle(nipSuffix) {
     .update({ google_email: googleEmail })
     .eq('id', pegawai.id);
 
-  if (updateError) {
-    return { error: 'Gagal menyimpan. Coba lagi.' };
-  }
+  if (updateError) return { error: 'Gagal menyimpan. Coba lagi.' };
 
   const { error: loginError } = await loginNip(nipSuffix);
   if (loginError) {
@@ -157,4 +152,55 @@ async function cekLinkGoogle() {
 
   if (error) return null;
   return data;
+}
+
+/* ── Nama Samaran ─────────────────────────────────────────── */
+
+// Cek apakah nama_samaran sudah diisi
+async function cekNamaSamaran() {
+  const profil = await getProfil();
+  if (!profil) return false;
+  return !!(profil.nama_samaran && profil.nama_samaran.trim());
+}
+
+// Simpan nama_samaran ke tabel pegawai
+async function simpanNamaSamaran(namaSamaran) {
+  const profil = await getProfil();
+  if (!profil) return { error: 'Profil tidak ditemukan.' };
+
+  // Cek apakah nama samaran sudah dipakai pegawai lain
+  const { data: existing } = await db
+    .from('pegawai')
+    .select('id')
+    .eq('nama_samaran', namaSamaran.trim())
+    .neq('id', profil.id)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return { error: 'Nama samaran ini sudah dipakai. Pilih nama lain.' };
+  }
+
+  const { error } = await db
+    .from('pegawai')
+    .update({ nama_samaran: namaSamaran.trim() })
+    .eq('id', profil.id);
+
+  if (error) return { error: 'Gagal menyimpan nama samaran. Coba lagi.' };
+  return { success: true };
+}
+
+/* ── Redirect setelah login — cek nama_samaran dulu ─────────
+   Dipakai di login.js dan google-callback.html
+   Kalau nama_samaran belum diisi → ke nama-samaran.html
+   Kalau sudah → ke halaman tujuan
+   ─────────────────────────────────────────────────────────── */
+async function redirectSetelahLogin(tujuan) {
+  const sudahAda = await cekNamaSamaran();
+  if (!sudahAda) {
+    // Simpan tujuan akhir supaya setelah isi nama samaran bisa redirect ke sana
+    sessionStorage.setItem('zi_after_nama_samaran', tujuan);
+    window.location.replace('nama-samaran.html');
+  } else {
+    window.location.replace(tujuan);
+  }
 }
