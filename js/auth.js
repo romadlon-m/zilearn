@@ -199,7 +199,7 @@ async function redirectSetelahLogin(tujuan) {
   if (!sudahAda) {
     // Simpan tujuan akhir supaya setelah isi nama samaran bisa redirect ke sana
     sessionStorage.setItem('zi_after_nama_samaran', tujuan);
-    window.location.replace('nama-samaran.html');
+    window.location.replace('profil.html');
   } else {
     window.location.replace(tujuan);
   }
