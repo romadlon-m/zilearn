@@ -62,9 +62,7 @@
           .update({ google_email: googleEmail })
           .eq('id', pegawaiId);
 
-        // Sign out Google session — user tetap login via NIP
-        await db.auth.signOut();
-
+        // Jangan signOut — biarkan Google session aktif, getProfil() bisa lookup by google_email
         if (updateErr) {
           sessionStorage.setItem('zi_link_error', 'Gagal menyimpan: ' + updateErr.message);
         } else {
@@ -83,11 +81,11 @@
         sessionStorage.removeItem('zi_after_login');
         setTimeout(() => redirectSetelahLogin(afterLogin), 800);
       } else {
-        statusEl.textContent = 'Akun belum terhubung ke NIP. Mengalihkan...';
-        sessionStorage.setItem('zi_google_email', session.user.email);
+        // Opsi A: khusus yang sudah link — tampil pesan, arahkan ke login NIP
+        statusEl.textContent = 'Akun Google ini belum terhubung ke NIP.';
         await db.auth.signOut();
-        sessionStorage.setItem('zi_need_link', '1');
-        setTimeout(() => window.location.replace('login.html'), 1000);
+        sessionStorage.setItem('zi_login_error', 'google_not_linked');
+        setTimeout(() => window.location.replace('login.html'), 1500);
       }
 
     } catch (err) {
