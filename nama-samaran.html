@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nama Samaran — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-body">
+
+  <div class="login-card" style="max-width:440px;">
+
+    <div class="login-logo">
+      <img src="assets/images/Logo_ZI_Learning.png" alt="ZI Learning">
+      <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
+    </div>
+
+    <h2 style="font-size:1.125rem;margin-bottom:6px;">Satu langkah lagi! 🎉</h2>
+    <p style="font-size:0.875rem;margin-bottom:0.75rem;color:var(--text-secondary);">
+      Pilih nama yang akan tampil di leaderboard ZI Challenge.
+    </p>
+    <div style="background:var(--surface);border-radius:var(--radius);padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:0.8125rem;color:var(--text-secondary);line-height:1.6;">
+      💡 Boleh nama asli, nama panggilan, atau nama samaran — terserah kamu.
+      Yang penting bukan nama pegawai lain dan mudah dikenali di leaderboard.
+    </div>
+
+    <div id="alert-error"   class="alert alert-danger mb-4"  style="display:none;"></div>
+    <div id="alert-success" class="alert alert-success mb-4" style="display:none;"></div>
+
+    <div class="form-group">
+      <label class="form-label">Nama di Leaderboard</label>
+      <input
+        type="text"
+        id="input-nama-samaran"
+        class="form-input"
+        maxlength="30"
+        placeholder="Contoh: Budi, Si Jujur, Elang Besi..."
+        autocomplete="off"
+      >
+      <div class="form-hint">Maksimal 30 karakter. Bisa diubah nanti di halaman Profil.</div>
+    </div>
+
+    <button id="btn-simpan" class="btn btn-primary btn-full" onclick="handleSimpan()">
+      Simpan & Mulai
+    </button>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (async () => {
+    const session = await getSession();
+    if (!session) { window.location.replace('login.html'); return; }
+
+    const profil = await getProfil();
+    if (!profil)  { window.location.replace('login.html'); return; }
+
+    // Kalau sudah punya nama samaran, skip langsung ke tujuan
+    if (profil.nama_samaran && profil.nama_samaran.trim()) {
+      const tujuan = sessionStorage.getItem('zi_after_nama_samaran') || 'insight.html';
+      sessionStorage.removeItem('zi_after_nama_samaran');
+      window.location.replace(tujuan);
+    }
+  })();
+
+  async function handleSimpan() {
+    const nilai = document.getElementById('input-nama-samaran').value.trim();
+    const btn   = document.getElementById('btn-simpan');
+    sembunyiAlert();
+
+    if (!nilai)           { tampilError('Nama tidak boleh kosong.'); return; }
+    if (nilai.length < 2) { tampilError('Nama minimal 2 karakter.'); return; }
+
+    btn.disabled    = true;
+    btn.textContent = 'Menyimpan...';
+
+    const { success, error } = await simpanNamaSamaran(nilai);
+
+    if (error) {
+      tampilError(error);
+      btn.disabled    = false;
+      btn.textContent = 'Simpan & Mulai';
+      return;
+    }
+
+    const tujuan = sessionStorage.getItem('zi_after_nama_samaran') || 'insight.html';
+    sessionStorage.removeItem('zi_after_nama_samaran');
+    window.location.replace(tujuan);
+  }
+
+  function tampilError(pesan) {
+    const el = document.getElementById('alert-error');
+    el.textContent = pesan; el.style.display = 'flex';
+  }
+  function sembunyiAlert() {
+    document.getElementById('alert-error').style.display   = 'none';
+    document.getElementById('alert-success').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('input-nama-samaran').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleSimpan();
+    });
+  });
+  </script>
+
+</body>
+</html>

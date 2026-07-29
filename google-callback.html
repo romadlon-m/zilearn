@@ -30,6 +30,7 @@
   (async () => {
     const statusEl   = document.getElementById('status-text');
     const afterLogin = sessionStorage.getItem('zi_after_login') || 'insight.html';
+    const action     = sessionStorage.getItem('zi_google_action');
 
     try {
       const { data: { session }, error: sessionError } = await db.auth.getSession();
@@ -40,6 +41,40 @@
         return;
       }
 
+      // ── Flow: hubungkan Google dari halaman Profil ──────────
+      if (action === 'link') {
+        sessionStorage.removeItem('zi_google_action');
+        statusEl.textContent = 'Menghubungkan akun Google...';
+
+        const googleEmail  = session.user.email;
+        const pegawaiId    = sessionStorage.getItem('zi_link_pegawai_id');
+        sessionStorage.removeItem('zi_link_pegawai_id');
+
+        if (!pegawaiId) {
+          statusEl.textContent = 'Sesi tidak valid. Mengalihkan...';
+          await db.auth.signOut();
+          setTimeout(() => window.location.replace('profil.html'), 1500);
+          return;
+        }
+
+        const { error: updateErr } = await db
+          .from('pegawai')
+          .update({ google_email: googleEmail })
+          .eq('id', pegawaiId);
+
+        // Sign out Google session — user tetap login via NIP
+        await db.auth.signOut();
+
+        if (updateErr) {
+          sessionStorage.setItem('zi_link_error', 'Gagal menyimpan: ' + updateErr.message);
+        } else {
+          sessionStorage.setItem('zi_link_success', googleEmail);
+        }
+        setTimeout(() => window.location.replace('profil.html'), 500);
+        return;
+      }
+
+      // ── Flow: login Google biasa ────────────────────────────
       statusEl.textContent = 'Memeriksa akun...';
       const profil = await cekLinkGoogle();
 

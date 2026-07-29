@@ -189,6 +189,7 @@ let profilData = null;
   if (!profilData) { window.location.replace('login.html'); return; }
 
   renderProfil(profilData);
+  cekHasilLinking();
 
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-konten').style.display  = '';
@@ -293,7 +294,10 @@ async function simpanSamaran() {
 
 /* ── Hubungkan Google ────────────────────────────────────── */
 function hubungkanGoogle() {
+  if (!profilData?.id) return;
+  // Simpan pegawai_id agar callback bisa update record yang tepat
   sessionStorage.setItem('zi_google_action', 'link');
+  sessionStorage.setItem('zi_link_pegawai_id', profilData.id);
   handleLoginGoogle();
 }
 
@@ -307,6 +311,29 @@ async function handleLoginGoogle() {
   if (error) {
     const el = document.getElementById('alert-google-error');
     el.textContent = 'Gagal memulai login Google: ' + error.message;
+    el.style.display = 'flex';
+  }
+}
+
+// Cek hasil linking dari callback (via sessionStorage)
+function cekHasilLinking() {
+  const sukses = sessionStorage.getItem('zi_link_success');
+  const gagal  = sessionStorage.getItem('zi_link_error');
+  if (sukses) {
+    sessionStorage.removeItem('zi_link_success');
+    if (profilData) profilData.google_email = sukses;
+    renderGoogleStatus(sukses);
+    // Tampilkan pesan sukses
+    const el = document.getElementById('alert-google-error');
+    el.textContent   = `Akun Google (${sukses}) berhasil dihubungkan.`;
+    el.className     = 'alert alert-success mb-4';
+    el.style.display = 'flex';
+    setTimeout(() => { el.style.display = 'none'; el.className = 'alert alert-danger mb-4'; }, 4000);
+  }
+  if (gagal) {
+    sessionStorage.removeItem('zi_link_error');
+    const el = document.getElementById('alert-google-error');
+    el.textContent = gagal;
     el.style.display = 'flex';
   }
 }
