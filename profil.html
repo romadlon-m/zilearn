@@ -302,11 +302,11 @@ function hubungkanGoogle() {
 }
 
 async function handleLoginGoogle() {
+  const redirectTo = window.location.href
+    .split('/').slice(0, -1).join('/') + '/google-callback.html';
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: {
-      redirectTo: window.location.origin + '/zilearn/google-callback.html',
-    },
+    options: { redirectTo },
   });
   if (error) {
     const el = document.getElementById('alert-google-error');
