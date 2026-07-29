@@ -73,6 +73,7 @@
       Masuk
     </button>
 
+    <!-- Google login dinonaktifkan sementara
     <div class="login-divider"><span>atau</span></div>
 
     <button class="btn btn-google btn-full" onclick="handleLoginGoogle()">
@@ -85,12 +86,13 @@
       Masuk dengan Google
     </button>
     <p style="font-size:0.75rem;color:var(--muted);text-align:center;margin-top:8px;">
-      Hanya untuk akun yang sudah dihubungkan ke NIP
+      Hanya untuk akun Google yang sudah dihubungkan ke NIP
     </p>
+    -->
 
   </div>
 
-  <!-- Modal: Link Google -->
+  <!-- Modal link Google dinonaktifkan sementara
   <div id="modal-link" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
     <div class="card" style="max-width:380px;width:90%;margin:1rem;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -113,6 +115,7 @@
       <button onclick="tutupModalLink()" class="btn btn-ghost btn-full mt-2">Batal — gunakan login NIP</button>
     </div>
   </div>
+  -->
 
   <style>
     .nama-item {
@@ -204,7 +207,18 @@
   window.getSelectedPegawaiId = () => document.getElementById('selected-pegawai-id').value || null;
 
   // Muat daftar nama saat halaman siap
-  document.addEventListener('DOMContentLoaded', muatDaftarNama);
+  document.addEventListener('DOMContentLoaded', () => {
+    muatDaftarNama();
+
+    // Cek error dari google callback
+    const loginErr = sessionStorage.getItem('zi_login_error');
+    if (loginErr === 'google_not_linked') {
+      sessionStorage.removeItem('zi_login_error');
+      const el = document.getElementById('alert-error');
+      el.textContent = 'Akun Google ini belum terhubung ke NIP. Login dengan NIP dulu, lalu hubungkan Google dari menu Profil.';
+      el.style.display = 'flex';
+    }
+  });
   </script>
   <script src="js/login.js"></script>
 
