@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Tabs ── */
+    .admin-tabs {
+      display: flex; gap: 4px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .admin-tab {
+      padding: 0.5rem 1.25rem; font-size: 0.9375rem; font-weight: 600;
+      color: var(--muted); cursor: pointer; border: none; background: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .admin-tab:hover { color: var(--text); }
+    .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* ── Status badge ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 10px; border-radius: 99px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-draft   { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    .badge-aktif   { background: #dcfce7; color: #166534; }
+    .badge-selesai { background: var(--primary-light); color: var(--primary-dark); }
+
+    /* ── Tabel admin ── */
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .admin-table th {
+      text-align: left; padding: 0.625rem 0.875rem;
+      font-size: 0.75rem; font-weight: 600; color: var(--muted);
+      border-bottom: 2px solid var(--border); background: var(--surface);
+      white-space: nowrap;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .admin-table td {
+      padding: 0.75rem 0.875rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tbody tr:hover { background: var(--surface); }
+    /* Kolom Nilai — disembunyikan saat filter Belum */
+    .hide-nilai { display: none; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 500;
+      align-items: center; justify-content: center; padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: var(--radius-lg);
+      padding: 1.75rem; width: 100%; max-width: 520px;
+      box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 1.25rem; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; }
+
+    /* ── Form ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* ── Konfirmasi status ── */
+    .konfirm-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 600;
+      align-items: center; justify-content: center; padding: 1rem;
+    }
+    .konfirm-overlay.open { display: flex; }
+    .konfirm-box {
+      background: #fff; border-radius: var(--radius-lg);
+      padding: 1.5rem; width: 100%; max-width: 400px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ── Partisipasi stats ── */
+    .part-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+    @media (max-width: 640px) { .part-stats { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── Filter toggle ── */
+    .filter-toggle { display: flex; gap: 4px; margin-bottom: 1rem; }
+    .filter-btn {
+      padding: 0.375rem 1rem; font-size: 0.8125rem; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: 99px;
+      background: #fff; color: var(--muted); cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* ── Select ── */
+    .admin-select {
+      padding: 0.5rem 2rem 0.5rem 0.875rem;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem;
+      color: var(--text); background: #fff; outline: none; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      min-width: 240px;
+    }
+    .admin-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(230,126,34,0.12); }
+
+    /* ── Alert ── */
+    .admin-alert {
+      padding: 0.75rem 1rem; border-radius: var(--radius);
+      font-size: 0.875rem; margin-bottom: 1rem; display: none;
+    }
+    .admin-alert.success { background: var(--success-light); color: var(--success); border: 1px solid #a7f3d0; }
+    .admin-alert.error   { background: var(--danger-light);  color: var(--danger);  border: 1px solid #fca5a5; }
+
+    /* ── Leaderboard admin ── */
+    .lb-admin-name { font-weight: 600; color: var(--text); }
+    .lb-admin-alias { font-size: 0.8125rem; color: var(--muted); margin-top: 1px; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+
+  <main class="main-content">
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1 class="page-title">Admin Panel</h1>
+        <p class="page-subtitle">Kelola challenge, pantau partisipasi, lihat leaderboard lengkap</p>
+      </div>
+      <div id="admin-badge" style="font-size:0.8125rem;color:var(--muted);padding-top:6px;"></div>
+    </div>
+
+    <div id="admin-alert" class="admin-alert"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading-overlay">
+      <div><div class="spinner" style="margin:0 auto 12px;"></div>
+      <p style="text-align:center;font-size:0.875rem;">Memuat...</p></div>
+    </div>
+
+    <div id="admin-content" style="display:none;">
+
+      <!-- Tabs -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="gantiTab('challenge', this)">Challenge</button>
+        <button class="admin-tab"        onclick="gantiTab('partisipasi', this)">Partisipasi</button>
+        <button class="admin-tab"        onclick="gantiTab('leaderboard', this)">Leaderboard</button>
+      </div>
+
+      <!-- ══ TAB: CHALLENGE ══ -->
+      <div id="tab-challenge">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+          <button class="btn btn-primary" onclick="bukaModalTambah()">+ Tambah Challenge</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Judul</th>
+                <th>Area</th>
+                <th>Tanggal</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-challenge"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ TAB: PARTISIPASI ══ -->
+      <div id="tab-partisipasi" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap;">
+          <label style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Challenge:</label>
+          <select id="part-select" class="admin-select" onchange="muatPartisipasi(this.value)">
+            <option value="">— Pilih challenge —</option>
+          </select>
+          <button id="btn-toggle-admin-part" class="btn btn-outline" onclick="toggleIncludeAdmin()"
+            style="font-size:0.8125rem;" title="Tampilkan/sembunyikan data admin di rekap">
+            Exclude Admin
+          </button>
+          <button class="btn btn-outline" onclick="refreshPartisipasi()" title="Muat ulang data partisipasi">
+            ↺ Refresh
+          </button>
+          <button class="btn btn-outline" disabled title="Fitur export akan tersedia di versi berikutnya" style="opacity:0.45;cursor:not-allowed;">
+            ↓ Export Excel
+          </button>
+        </div>
+
+        <div id="part-stats" class="part-stats" style="display:none;">
+          <div class="stat-card">
+            <div class="stat-label">Total Pegawai</div>
+            <div class="stat-value" id="part-total">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sudah</div>
+            <div class="stat-value" style="color:var(--success);" id="part-sudah">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Belum</div>
+            <div class="stat-value" style="color:var(--danger);" id="part-belum">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Partisipasi</div>
+            <div class="stat-value" id="part-pct">—</div>
+            <div class="stat-sub">persen</div>
+          </div>
+        </div>
+
+        <div id="part-filter" class="filter-toggle" style="display:none;">
+          <button class="filter-btn active" onclick="filterPartisipasi('semua', this)">Semua</button>
+          <button class="filter-btn" onclick="filterPartisipasi('sudah', this)">Sudah</button>
+          <button class="filter-btn" onclick="filterPartisipasi('belum', this)">Belum</button>
+        </div>
+
+        <div id="part-table-wrap" class="card" style="padding:0;overflow-y:auto;max-height:60vh;display:none;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nama</th>
+                <th>Satker</th>
+                <th>Ruangan</th>
+                <th>Status</th>
+                <th class="col-nilai">Nilai</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-partisipasi"></tbody>
+          </table>
+        </div>
+
+        <div id="part-empty" class="empty-state" style="display:none;">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-title">Pilih challenge untuk melihat partisipasi</div>
+        </div>
+      </div>
+
+      <!-- ══ TAB: LEADERBOARD ══ -->
+      <div id="tab-leaderboard" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap;">
+          <label style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Challenge:</label>
+          <select id="lb-select" class="admin-select" onchange="muatLbAdmin(this.value)">
+            <option value="">— Pilih challenge —</option>
+          </select>
+          <button id="btn-toggle-admin-lb" class="btn btn-outline" onclick="toggleIncludeAdmin()"
+            style="font-size:0.8125rem;" title="Tampilkan/sembunyikan data admin di leaderboard">
+            Exclude Admin
+          </button>
+        </div>
+
+        <div id="lb-admin-empty" class="empty-state" style="display:none;">
+          <div class="empty-state-icon">🏆</div>
+          <div class="empty-state-title">Pilih challenge untuk melihat leaderboard</div>
+        </div>
+
+        <div id="lb-admin-hasil" style="display:none;">
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width:44px;text-align:center;">#</th>
+                  <th>Nama</th>
+                  <th>Ruangan</th>
+                  <th>Nilai</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-lb-admin"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-content -->
+  </main>
+</div>
+
+<!-- Modal Tambah Challenge -->
+<div class="modal-overlay" id="modal-tambah">
+  <div class="modal">
+    <div class="modal-title">Tambah Challenge</div>
+    <div id="modal-alert" class="admin-alert"></div>
+
+    <div class="form-group">
+      <label class="form-label">Judul</label>
+      <input type="text" id="inp-judul" class="form-input" placeholder="Kuis Minggu ke-1">
+    </div>
+
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group">
+        <label class="form-label">Area 1 (wajib)</label>
+        <select id="inp-area1" class="form-input">
+          <option value="">— Pilih —</option>
+          <option value="P1">P1 — Manajemen Perubahan</option>
+          <option value="P2">P2 — Penataan Tatalaksana</option>
+          <option value="P3">P3 — Penataan SDM</option>
+          <option value="P4">P4 — Penguatan Akuntabilitas</option>
+          <option value="P5">P5 — Penguatan Pengawasan</option>
+          <option value="P6">P6 — Pelayanan Publik</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Area 2 (opsional)</label>
+        <select id="inp-area2" class="form-input">
+          <option value="">— Tidak ada —</option>
+          <option value="P1">P1 — Manajemen Perubahan</option>
+          <option value="P2">P2 — Penataan Tatalaksana</option>
+          <option value="P3">P3 — Penataan SDM</option>
+          <option value="P4">P4 — Penguatan Akuntabilitas</option>
+          <option value="P5">P5 — Penguatan Pengawasan</option>
+          <option value="P6">P6 — Pelayanan Publik</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group">
+        <label class="form-label">Tanggal</label>
+        <input type="date" id="inp-tanggal" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jumlah Soal</label>
+        <input type="number" id="inp-jumlah" class="form-input" value="10" min="1" max="30">
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group">
+        <label class="form-label">Jam Buka</label>
+        <input type="time" id="inp-jam-buka" class="form-input" value="08:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jam Tutup</label>
+        <input type="time" id="inp-jam-tutup" class="form-input" value="23:59">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:1rem;">
+      <label class="form-label">Insight Ref <span style="font-weight:400;color:var(--muted);">(opsional — ID artikel, pisah koma)</span></label>
+      <input type="text" id="inp-insight-ref" class="form-input" placeholder="1,2">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="tutupModal()">Batal</button>
+      <button class="btn btn-primary" id="btn-simpan-challenge" onclick="simpanChallenge()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi Ubah Status -->
+<div class="konfirm-overlay" id="konfirm-status">
+  <div class="konfirm-box">
+    <h3 style="margin-bottom:8px;" id="konfirm-title">Konfirmasi</h3>
+    <p style="font-size:0.9375rem;margin-bottom:1.5rem;" id="konfirm-pesan"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="tutupKonfirm()">Batal</button>
+      <button class="btn btn-primary" id="btn-konfirm-ok">Ya, lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+
+const NAMA_PILAR = {
+  P1:'Manajemen Perubahan', P2:'Penataan Tatalaksana', P3:'Penataan SDM',
+  P4:'Penguatan Akuntabilitas', P5:'Penguatan Pengawasan', P6:'Pelayanan Publik',
+};
+
+let allChallenges  = [];
+let allPegawai     = [];
+let partCache      = {};
+let lbCache        = {};
+let filterAktif    = 'semua';
+let partRows       = [];
+let includeAdmin   = false;  // toggle include/exclude admin di rekap & lb admin
+
+/* ── Init ── */
+(async () => {
+  const sidebarEl = document.getElementById('sidebar-placeholder');
+  if (sidebarEl) {
+    try {
+      const res = await fetch('components/sidebar.html');
+      sidebarEl.innerHTML = await res.text();
+      initSidebar('');
+    } catch (e) { console.error('Sidebar error:', e); }
+  }
+
+  const profil = await requireAdmin();
+  document.getElementById('admin-badge').textContent = `Login sebagai: ${profil.nama}`;
+
+  // Fetch semua challenge
+  const { data: chal, error: ec } = await db
+    .from('challenge').select('*').order('tanggal', { ascending: false });
+  if (ec) { showAlert('Gagal memuat challenge: ' + ec.message, 'error'); }
+  else allChallenges = chal || [];
+
+  // Fetch semua pegawai (role pegawai saja)
+  const { data: peg, error: ep } = await db
+    .from('pegawai').select('id, nama, satker, ruangan, nama_samaran, role')
+    .order('nama', { ascending: true });
+  if (ep) { showAlert('Gagal memuat pegawai: ' + ep.message, 'error'); }
+  else allPegawai = peg || [];
+
+  renderChallengeTable();
+  isiDropdown();
+
+  document.getElementById('loading').style.display      = 'none';
+  document.getElementById('admin-content').style.display = '';
+  tampilPartEmpty();
+  tampilLbEmpty();
+})();
+
+/* ── Tab ── */
+function gantiTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['challenge','partisipasi','leaderboard'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+/* ── Helpers ── */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function labelArea(c) {
+  const a1 = NAMA_PILAR[c.area_1] || c.area_1 || '';
+  const a2 = NAMA_PILAR[c.area_2] || c.area_2 || '';
+  return a2 ? `${a1} + ${a2}` : a1;
+}
+
+function showAlert(pesan, tipe) {
+  const el = document.getElementById('admin-alert');
+  el.textContent = pesan;
+  el.className   = `admin-alert ${tipe}`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function showModalAlert(pesan, tipe) {
+  const el = document.getElementById('modal-alert');
+  el.textContent = pesan;
+  el.className   = `admin-alert ${tipe}`;
+  el.style.display = 'block';
+}
+
+function isiDropdown() {
+  const selPart = document.getElementById('part-select');
+  const selLb   = document.getElementById('lb-select');
+  allChallenges.forEach(c => {
+    const label = `${c.judul} (${formatTanggal(c.tanggal)})`;
+    [selPart, selLb].forEach(sel => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = label;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function badgeHtml(status) {
+  const s = (status||'').toLowerCase();
+  const cls = s === 'aktif' ? 'badge-aktif' : s === 'selesai' ? 'badge-selesai' : 'badge-draft';
+  return `<span class="badge ${cls}">${escHtml(status)}</span>`;
+}
+
+/* ── Toggle include/exclude admin ── */
+function toggleIncludeAdmin() {
+  includeAdmin = !includeAdmin;
+  const label = includeAdmin ? 'Include Admin' : 'Exclude Admin';
+  document.querySelectorAll('#btn-toggle-admin-part, #btn-toggle-admin-lb').forEach(btn => {
+    if (btn) {
+      btn.textContent = label;
+      btn.style.color         = includeAdmin ? 'var(--primary)' : '';
+      btn.style.borderColor   = includeAdmin ? 'var(--primary)' : '';
+    }
+  });
+  // Invalidate cache dan reload tab yang aktif
+  partCache = {};
+  lbCache   = {};
+  const partVal = document.getElementById('part-select').value;
+  const lbVal   = document.getElementById('lb-select').value;
+  if (partVal) muatPartisipasi(partVal);
+  if (lbVal)   muatLbAdmin(lbVal);
+}
+
+function pegawaiTampil() {
+  return includeAdmin ? allPegawai : allPegawai.filter(p => p.role !== 'admin');
+}
+
+/* ── Challenge Table ── */
+function renderChallengeTable() {
+  const tbody = document.getElementById('tbody-challenge');
+  if (!allChallenges.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Belum ada challenge</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allChallenges.map(c => {
+    const status = (c.status || '').toLowerCase();
+    let aksiHtml = '';
+    if (status === 'draft') {
+      aksiHtml = `<button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;"
+        onclick="konfirmasiUbahStatus(${c.id}, 'aktif', '${escHtml(c.judul)}')">Aktifkan</button>`;
+    } else if (status === 'aktif') {
+      aksiHtml = `<button class="btn" style="font-size:0.8125rem;padding:4px 12px;background:var(--warning-light);color:var(--warning);border:1px solid var(--warning);"
+        onclick="konfirmasiUbahStatus(${c.id}, 'selesai', '${escHtml(c.judul)}')">Tutup</button>`;
+    } else {
+      // Status selesai — tombol reset hanya muncul di DEV_MODE
+      const resetBtn = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? `<button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;color:var(--muted);"
+            onclick="konfirmasiUbahStatus(${c.id}, 'draft', '${escHtml(c.judul)}')">↺ Reset Draft</button>`
+        : '';
+      aksiHtml = resetBtn || '<span style="font-size:0.8125rem;color:var(--muted);">—</span>';
+    }
+    return `
+      <tr>
+        <td style="font-weight:600;">${escHtml(c.judul)}</td>
+        <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(labelArea(c))}</td>
+        <td style="font-size:0.8125rem;">${formatTanggal(c.tanggal)}</td>
+        <td>${badgeHtml(c.status)}</td>
+        <td>${aksiHtml}</td>
+      </tr>`;
+  }).join('');
+}
+
+/* ── Tambah Challenge ── */
+function bukaModalTambah() {
+  document.getElementById('modal-alert').style.display = 'none';
+  document.getElementById('inp-judul').value       = '';
+  document.getElementById('inp-area1').value       = '';
+  document.getElementById('inp-area2').value       = '';
+  document.getElementById('inp-tanggal').value     = '';
+  document.getElementById('inp-jumlah').value      = '10';
+  document.getElementById('inp-jam-buka').value    = '08:00';
+  document.getElementById('inp-jam-tutup').value   = '23:59';
+  document.getElementById('inp-insight-ref').value = '';
+  document.getElementById('modal-tambah').classList.add('open');
+}
+
+function tutupModal() {
+  document.getElementById('modal-tambah').classList.remove('open');
+}
+
+async function simpanChallenge() {
+  const judul    = document.getElementById('inp-judul').value.trim();
+  const area1    = document.getElementById('inp-area1').value;
+  const area2    = document.getElementById('inp-area2').value;
+  const tanggal  = document.getElementById('inp-tanggal').value;
+  const jumlah   = parseInt(document.getElementById('inp-jumlah').value) || 10;
+  const jamBuka  = document.getElementById('inp-jam-buka').value;
+  const jamTutup = document.getElementById('inp-jam-tutup').value;
+  const insRef   = document.getElementById('inp-insight-ref').value.trim();
+
+  if (!judul)   { showModalAlert('Judul wajib diisi.', 'error'); return; }
+  if (!area1)   { showModalAlert('Area 1 wajib dipilih.', 'error'); return; }
+  if (!tanggal) { showModalAlert('Tanggal wajib diisi.', 'error'); return; }
+
+  const btn = document.getElementById('btn-simpan-challenge');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  const payload = {
+    judul,
+    area_1      : area1,
+    nama_area_1 : NAMA_PILAR[area1] || area1,
+    area_2      : area2 || null,
+    nama_area_2 : area2 ? (NAMA_PILAR[area2] || area2) : null,
+    tanggal,
+    jam_buka    : jamBuka,
+    jam_tutup   : jamTutup,
+    jumlah_soal : jumlah,
+    status      : 'draft',
+    insight_ref : insRef || null,
+  };
+
+  const { data, error } = await db.from('challenge').insert(payload).select().single();
+
+  btn.disabled = false; btn.textContent = 'Simpan';
+
+  if (error) { showModalAlert('Gagal menyimpan: ' + error.message, 'error'); return; }
+
+  allChallenges.unshift(data);
+  renderChallengeTable();
+
+  // Tambah ke dropdown partisipasi & leaderboard
+  const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
+  ['part-select','lb-select'].forEach(id => {
+    const o = document.createElement('option');
+    o.value = data.id; o.textContent = label;
+    document.getElementById(id).appendChild(o);
+  });
+
+  tutupModal();
+  showAlert(`Challenge "${data.judul}" berhasil ditambahkan.`, 'success');
+}
+
+/* ── Ubah Status Challenge ── */
+let pendingStatusId   = null;
+let pendingStatusBaru = null;
+
+function konfirmasiUbahStatus(id, statusBaru, judul) {
+  pendingStatusId   = id;
+  pendingStatusBaru = statusBaru;
+  const pesanMap = {
+    aktif   : `Challenge <strong>${judul}</strong> akan diaktifkan dan bisa dikerjakan pegawai.`,
+    selesai : `Challenge <strong>${judul}</strong> akan ditutup. Leaderboard akan segera tampil.`,
+    draft   : `[DEV] Challenge <strong>${judul}</strong> akan direset ke Draft.`,
+  };
+  const titleMap = { aktif:'Aktifkan Challenge?', selesai:'Tutup Challenge?', draft:'Reset ke Draft?' };
+  document.getElementById('konfirm-title').textContent  = titleMap[statusBaru] || 'Konfirmasi';
+  document.getElementById('konfirm-pesan').innerHTML    = pesanMap[statusBaru] || '';
+  document.getElementById('btn-konfirm-ok').onclick     = eksekusiUbahStatus;
+  document.getElementById('konfirm-status').classList.add('open');
+}
+
+function tutupKonfirm() {
+  document.getElementById('konfirm-status').classList.remove('open');
+  pendingStatusId = null; pendingStatusBaru = null;
+}
+
+async function eksekusiUbahStatus() {
+  if (!pendingStatusId) return;
+  const btn = document.getElementById('btn-konfirm-ok');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+
+  const { error } = await db.from('challenge')
+    .update({ status: pendingStatusBaru })
+    .eq('id', pendingStatusId);
+
+  btn.disabled = false; btn.textContent = 'Ya, lanjutkan';
+  tutupKonfirm();
+
+  if (error) { showAlert('Gagal ubah status: ' + error.message, 'error'); return; }
+
+  const idx = allChallenges.findIndex(c => c.id === pendingStatusId);
+  if (idx !== -1) allChallenges[idx].status = pendingStatusBaru;
+  renderChallengeTable();
+  showAlert('Status challenge berhasil diubah.', 'success');
+}
+
+/* ── Partisipasi ── */
+function refreshPartisipasi() {
+  const val = document.getElementById('part-select').value;
+  if (!val) return;
+  delete partCache[val];
+  muatPartisipasi(val);
+}
+
+function tampilPartEmpty() {
+  document.getElementById('part-stats').style.display      = 'none';
+  document.getElementById('part-filter').style.display     = 'none';
+  document.getElementById('part-table-wrap').style.display = 'none';
+  document.getElementById('part-empty').style.display      = '';
+}
+
+async function muatPartisipasi(challengeId) {
+  tampilPartEmpty();
+  if (!challengeId) return;
+
+  // Cache check
+  if (partCache[challengeId]) {
+    renderPartisipasi(partCache[challengeId]);
+    return;
+  }
+
+  document.getElementById('part-empty').style.display = 'none';
+
+  // Ambil riwayat untuk challenge ini
+  const { data: riwayat, error } = await db
+    .from('riwayat_kuis')
+    .select('pegawai_id, nilai')
+    .eq('challenge_id', String(challengeId));
+
+  if (error) { showAlert('Gagal memuat data: ' + error.message, 'error'); return; }
+
+  // SUM nilai per pegawai
+  const nilaiMap = {};
+  (riwayat || []).forEach(r => {
+    nilaiMap[r.pegawai_id] = (nilaiMap[r.pegawai_id] || 0) + (Number(r.nilai) || 0);
+  });
+  Object.keys(nilaiMap).forEach(k => {
+    nilaiMap[k] = Math.min(100, Math.round(nilaiMap[k]));
+  });
+
+  // Gabungkan dengan semua pegawai
+  const rows = pegawaiTampil().map(p => ({
+    ...p,
+    sudah: !!nilaiMap[p.id],
+    nilai: nilaiMap[p.id] ?? null,
+  }));
+
+  partCache[challengeId] = rows;
+  renderPartisipasi(rows);
+}
+
+function renderPartisipasi(rows) {
+  partRows = rows;
+  filterAktif = 'semua';
+  document.querySelectorAll('.filter-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === 0);
+  });
+
+  const sudah = rows.filter(r => r.sudah).length;
+  const total = rows.length;
+  document.getElementById('part-total').textContent = total;
+  document.getElementById('part-sudah').textContent = sudah;
+  document.getElementById('part-belum').textContent = total - sudah;
+  document.getElementById('part-pct').textContent   = total ? Math.round(sudah/total*100) : 0;
+
+  document.getElementById('part-stats').style.display      = 'grid';
+  document.getElementById('part-filter').style.display     = 'flex';
+  document.getElementById('part-table-wrap').style.display = '';
+  document.getElementById('part-empty').style.display      = 'none';
+
+  renderPartTable(rows);
+}
+
+function filterPartisipasi(filter, btn) {
+  filterAktif = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = filter === 'sudah' ? partRows.filter(r => r.sudah)
+    : filter === 'belum' ? partRows.filter(r => !r.sudah)
+    : partRows;
+  renderPartTable(filtered);
+
+  // Sembunyikan kolom Nilai saat filter Belum
+  const hideNilai = filter === 'belum';
+  document.querySelectorAll('.col-nilai').forEach(el => {
+    el.classList.toggle('hide-nilai', hideNilai);
+  });
+}
+
+function renderPartTable(rows) {
+  document.getElementById('tbody-partisipasi').innerHTML = rows.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:0.8125rem;">${i+1}</td>
+      <td style="font-weight:600;">${escHtml(r.nama)}</td>
+      <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.satker||'')}</td>
+      <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.ruangan||'—')}</td>
+      <td>${r.sudah
+        ? '<span class="badge badge-aktif">Sudah</span>'
+        : '<span class="badge badge-draft">Belum</span>'}</td>
+      <td class="col-nilai" style="font-weight:700;color:${r.sudah ? 'var(--primary)' : 'var(--muted)'};">
+        ${r.sudah ? r.nilai : '—'}
+      </td>
+    </tr>`).join('');
+}
+
+/* ── Leaderboard Admin ── */
+function tampilLbEmpty() {
+  document.getElementById('lb-admin-empty').style.display  = '';
+  document.getElementById('lb-admin-hasil').style.display  = 'none';
+}
+
+async function muatLbAdmin(challengeId) {
+  tampilLbEmpty();
+  if (!challengeId) return;
+
+  if (lbCache[challengeId]) { renderLbAdmin(lbCache[challengeId]); return; }
+
+  const { data, error } = await db
+    .from('riwayat_kuis')
+    .select('pegawai_id, nilai, waktu')
+    .eq('challenge_id', String(challengeId));
+
+  if (error) { showAlert('Gagal memuat leaderboard: ' + error.message, 'error'); return; }
+
+  // Aggregate: SUM nilai + MAX waktu per pegawai
+  const byPeg = {};
+  (data||[]).forEach(r => {
+    const pid = r.pegawai_id;
+    const n   = Number(r.nilai) || 0;
+    const ts  = r.waktu ? new Date(r.waktu).getTime() : 0;
+    const peg = pegawaiTampil().find(p => p.id === pid);
+    if (!byPeg[pid]) {
+      byPeg[pid] = {
+        nama        : peg?.nama || '(tidak dikenal)',
+        nama_samaran: peg?.nama_samaran || '—',
+        ruangan     : peg?.ruangan || '',
+        satker      : peg?.satker || '',
+        nilai       : 0,
+        waktu_submit: 0,
+      };
+    }
+    byPeg[pid].nilai += n;
+    if (ts > byPeg[pid].waktu_submit) byPeg[pid].waktu_submit = ts;
+  });
+
+  Object.values(byPeg).forEach(p => { p.nilai = Math.min(100, Math.round(p.nilai)); });
+  const result = Object.values(byPeg).sort((a,b) => b.nilai - a.nilai || a.waktu_submit - b.waktu_submit);
+  lbCache[challengeId] = result;
+  renderLbAdmin(result);
+}
+
+function renderLbAdmin(rows) {
+  if (!rows.length) {
+    document.getElementById('tb-lb-admin').innerHTML =
+      '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">Belum ada peserta</td></tr>';
+    document.getElementById('lb-admin-hasil').style.display = '';
+    document.getElementById('lb-admin-empty').style.display = 'none';
+    return;
+  }
+
+  const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+  document.getElementById('tbody-lb-admin').innerHTML = rows.map((r, i) => `
+    <tr>
+      <td style="text-align:center;font-size:${i<3?'1.125':'0.875'}rem;">${medal(i+1)}</td>
+      <td>
+        <div class="lb-admin-name">${escHtml(r.nama)}</div>
+        <div class="lb-admin-alias">alias: ${escHtml(r.nama_samaran)}</div>
+      </td>
+      <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.ruangan||r.satker||'—')}</td>
+      <td style="font-weight:700;color:var(--primary);font-size:1rem;">${r.nilai}</td>
+    </tr>`).join('');
+
+  document.getElementById('lb-admin-hasil').style.display = '';
+  document.getElementById('lb-admin-empty').style.display = 'none';
+}
+
+</script>
+</body>
+</html>

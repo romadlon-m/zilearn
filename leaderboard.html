@@ -9,23 +9,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* ── Leaderboard-specific styles ── */
-    .lb-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
-    }
-
-    .lb-select-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
+    /* ── Layout ── */
+    .lb-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .lb-select-wrap { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .lb-select {
       padding: 0.5rem 0.875rem;
       border: 1.5px solid var(--border);
@@ -43,233 +29,185 @@
       padding-right: 2rem;
       min-width: 220px;
     }
+    .lb-select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(230,126,34,0.12); }
 
-    .lb-select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230,126,34,0.12);
-    }
-
-    /* Tabs */
-    .lb-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 1.25rem;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 0;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--surface);
-      padding-top: 6px;
-      margin-top: -6px;
-    }
-
-    .lb-tab {
-      padding: 0.5rem 1.25rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      transition: color 0.15s, border-color 0.15s;
-    }
-
-    .lb-tab:hover { color: var(--text); }
-    .lb-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-
-    /* Ranking list */
-    .rank-list { display: flex; flex-direction: column; gap: 8px; }
-
-    .rank-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0.75rem 1rem;
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      transition: box-shadow 0.15s;
-    }
-
-    .rank-item:hover { box-shadow: var(--shadow-sm); }
-
-    .rank-item.rank-1 { border-color: #f59e0b; background: #fffbeb; }
-    .rank-item.rank-2 { border-color: #9ca3af; background: #f9fafb; }
-    .rank-item.rank-3 { border-color: #cd7c2f; background: #fdf6ee; }
-
-    .rank-medal {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.125rem;
-      flex-shrink: 0;
-    }
-
-    .rank-num {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8125rem;
-      font-weight: 700;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-
-    .rank-info { flex: 1; min-width: 0; }
-
-    .rank-name {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .rank-meta {
-      font-size: 0.8125rem;
-      color: var(--muted);
-      margin-top: 1px;
-    }
-
-    .rank-score {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: var(--primary);
-      flex-shrink: 0;
-    }
-
-    .rank-item.rank-1 .rank-score { color: #b45309; }
-    .rank-item.rank-2 .rank-score { color: #6b7280; }
-    .rank-item.rank-3 .rank-score { color: #92400e; }
-
-    /* Active challenge banner */
-    .lb-active-banner {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0.875rem 1rem;
-      background: var(--primary-light);
-      border: 1px solid #f9b97a;
-      border-radius: var(--radius);
-      margin-bottom: 1.5rem;
-      font-size: 0.875rem;
-      color: var(--primary-dark);
-    }
-
-    .lb-active-banner svg { flex-shrink: 0; }
-
-    /* Stats row */
-    .lb-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    @media (max-width: 640px) {
-      .lb-stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-      .stat-value { font-size: 1.375rem; }
-      .lb-header { flex-direction: column; align-items: flex-start; }
-      .lb-select { min-width: 100%; }
-    }
-
-    /* Tabel tim/ruangan */
-    .lb-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-    .lb-table th {
-      text-align: left;
-      padding: 0.625rem 0.875rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--muted);
-      border-bottom: 2px solid var(--border);
-      background: var(--surface);
-      white-space: nowrap;
-    }
-    .lb-table th.sortable {
-      cursor: pointer;
-      user-select: none;
-    }
-    .lb-table th.sortable:hover { color: var(--text-secondary); }
-    .lb-table th.sort-active { color: var(--primary); }
-    .lb-table td {
-      padding: 0.75rem 0.875rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
-    .lb-table tr:last-child td { border-bottom: none; }
-    .lb-table tbody tr:hover { background: var(--surface); }
-    .lb-table tr.rank-1-row td:first-child { background: #fffbeb; }
-    .lb-table tr.rank-2-row td:first-child { background: #f9fafb; }
-    .lb-table tr.rank-3-row td:first-child { background: #fdf6ee; }
-    .lb-table tr.rank-1-row { background: #fffdf5; }
-    .lb-table tr.rank-2-row { background: #fafafa; }
-    .lb-table tr.rank-3-row { background: #fdf8f2; }
-    .sort-arrow { opacity: 0.5; margin-left: 3px; }
-    .sort-active .sort-arrow { opacity: 1; }
-
-    /* Highlight card peringkat 1 */
-    .lb-highlight {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+    /* ── Summary 5 kolom ── */
+    .lb-summary { display:grid; grid-template-columns:repeat(5,1fr); gap:1rem; margin-bottom:1.5rem; }
     .lb-highlight-card {
       background: var(--surface-card);
-      border: 1px solid var(--border);
+      border: 1.5px solid var(--border);
       border-radius: var(--radius);
-      padding: 0.875rem 1rem;
+      padding: 1rem;
       display: flex;
       align-items: center;
       gap: 10px;
+      min-height: 88px;
     }
-    .lb-highlight-medal { font-size: 1.5rem; flex-shrink: 0; }
-    .lb-highlight-label {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 2px;
+    .lb-highlight-card.winner-individu { border-color:#f59e0b; background:linear-gradient(135deg,#fffbeb 0%,#fff 100%); }
+    .lb-highlight-card.winner-tim { border-color:var(--primary); background:linear-gradient(135deg,#fef3e2 0%,#fff 100%); }
+    .lb-highlight-medal { font-size:1.625rem; flex-shrink:0; }
+    .lb-highlight-label { font-size:0.6875rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px; }
+    .lb-highlight-name  { font-size:0.9375rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+    .lb-highlight-score { font-size:0.8125rem; color:var(--primary); font-weight:600; margin-top:1px; }
+
+    @media (max-width:900px) { .lb-summary { grid-template-columns:repeat(3,1fr); } }
+    @media (max-width:640px) {
+      .lb-summary {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 0.625rem;
+      }
+      /* 3 stat cards baris 1: kolom 1,2 — stat ke-3 penuh */
+      .lb-summary .stat-card:nth-child(3) { grid-column: 1 / 3; }
+      /* 2 highlight cards baris 2: masing-masing 1 kolom penuh */
+      .lb-summary .lb-highlight-card:nth-child(4),
+      .lb-summary .lb-highlight-card:nth-child(5) { grid-column: span 1; }
+      .lb-header { flex-direction:column; align-items:flex-start; }
+      .lb-select { min-width:100%; }
+      .lb-highlight-name { max-width:none; }
     }
-    .lb-highlight-name {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .lb-highlight-score {
-      font-size: 0.8125rem;
-      color: var(--primary);
-      font-weight: 600;
-      margin-top: 1px;
-    }
-    @media (max-width: 480px) {
-      .lb-highlight { grid-template-columns: 1fr; gap: 0.5rem; }
+    @media (max-width:380px) {
+      .lb-summary { grid-template-columns: 1fr; }
+      .lb-summary .stat-card:nth-child(3),
+      .lb-summary .lb-highlight-card { grid-column: span 1; }
     }
 
-    @media (max-width: 480px) {
-      .lb-table th, .lb-table td { padding: 0.5rem 0.625rem; font-size: 0.8125rem; }
+    /* ── Sticky tabs ── */
+    .lb-tabs {
+      display:flex; gap:4px;
+      border-bottom:2px solid var(--border);
+      position:sticky; top:0; z-index:10;
+      background:var(--surface);
+      padding-top:6px; margin-top:-6px; margin-bottom:1.25rem;
     }
+    .lb-tab {
+      padding:0.5rem 1.25rem; font-size:0.875rem; font-weight:600;
+      color:var(--muted); cursor:pointer; border:none; background:none;
+      font-family:'Plus Jakarta Sans',sans-serif;
+      border-bottom:2px solid transparent; margin-bottom:-2px;
+      transition:color 0.15s,border-color 0.15s;
+    }
+    .lb-tab:hover { color:var(--text); }
+    .lb-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+    /* ── Podium ── */
+    .podium { display:grid; grid-template-columns:1fr 1fr 1fr; align-items:flex-end; gap:10px; margin-bottom:1.5rem; }
+    .podium-slot { display:flex; flex-direction:column; align-items:center; }
+    .podium-card {
+      background:var(--surface-card); border:1.5px solid var(--border);
+      border-radius:var(--radius); padding:0.875rem 0.75rem;
+      text-align:center; width:100%; margin-bottom:6px;
+      transition:box-shadow 0.2s;
+    }
+    .podium-card:hover { box-shadow:var(--shadow); }
+    .podium-slot.p1 .podium-card { border-color:#f59e0b; background:linear-gradient(160deg,#fffbeb,#fff); box-shadow:0 4px 16px rgba(245,158,11,0.18); }
+    .podium-slot.p2 .podium-card { border-color:#9ca3af; background:linear-gradient(160deg,#f3f4f6,#fff); }
+    .podium-slot.p3 .podium-card { border-color:#cd7c2f; background:linear-gradient(160deg,#fdf6ee,#fff); }
+    .podium-medal { font-size:2rem; display:block; margin-bottom:4px; animation:bounceMedal 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+    .podium-slot.p1 .podium-medal { animation-delay:0.2s; }
+    .podium-slot.p2 .podium-medal { animation-delay:0.35s; }
+    .podium-slot.p3 .podium-medal { animation-delay:0.5s; }
+    @keyframes bounceMedal {
+      0%   { transform:scale(0.4); opacity:0; }
+      65%  { transform:scale(1.25); opacity:1; }
+      85%  { transform:scale(0.92); }
+      100% { transform:scale(1); }
+    }
+    .podium-name  { font-size:0.875rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+    .podium-score { font-size:1.375rem; font-weight:700; line-height:1; margin-bottom:3px; }
+    .podium-slot.p1 .podium-score {
+      background:linear-gradient(135deg,#e67e22,#f39c12);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .podium-slot.p2 .podium-score { color:#6b7280; }
+    .podium-slot.p3 .podium-score { color:#92400e; }
+    .podium-meta { font-size:0.75rem; color:var(--muted); }
+    .podium-bar {
+      width:100%; border-radius:4px 4px 0 0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.8125rem; font-weight:700; color:rgba(255,255,255,0.9);
+      animation:growUp 0.45s ease both;
+    }
+    .podium-slot.p1 .podium-bar { height:60px; background:linear-gradient(180deg,#f59e0b,#d97706); animation-delay:0.05s; }
+    .podium-slot.p2 .podium-bar { height:40px; background:linear-gradient(180deg,#9ca3af,#6b7280); animation-delay:0.15s; }
+    .podium-slot.p3 .podium-bar { height:28px; background:linear-gradient(180deg,#cd7c2f,#b45309); animation-delay:0.25s; }
+    @keyframes growUp {
+      from { transform:scaleY(0); transform-origin:bottom; opacity:0; }
+      to   { transform:scaleY(1); transform-origin:bottom; opacity:1; }
+    }
+    @media (max-width:480px) {
+      .podium-score { font-size:1.125rem; }
+      .podium-medal { font-size:1.5rem; }
+      .podium-card  { padding:0.625rem 0.5rem; }
+    }
+
+    /* ── Rank list pos 4+ ── */
+    .rank-list { display:flex; flex-direction:column; gap:8px; }
+    .rank-item {
+      display:flex; align-items:center; gap:12px;
+      padding:0.75rem 1rem;
+      background:var(--surface-card);
+      border:1px solid var(--border);
+      border-left:4px solid var(--border);
+      border-radius:var(--radius);
+      animation:slideUp 0.3s ease both;
+    }
+    .rank-item:hover { box-shadow:var(--shadow-sm); }
+    @keyframes slideUp {
+      from { transform:translateY(12px); opacity:0; }
+      to   { transform:translateY(0);    opacity:1; }
+    }
+    .rank-num {
+      width:30px; height:30px; border-radius:50%;
+      background:var(--surface); border:1.5px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.8125rem; font-weight:700; color:var(--muted); flex-shrink:0;
+    }
+    .rank-info { flex:1; min-width:0; }
+    .rank-name  { font-size:0.9375rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .rank-meta  { font-size:0.8125rem; color:var(--muted); margin-top:1px; }
+    .rank-score { font-size:1.125rem; font-weight:700; color:var(--primary); flex-shrink:0; }
+
+    /* Waktu submit inline untuk tie */
+    .submit-time {
+      font-size: 0.6875rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 1px;
+      letter-spacing: 0.01em;
+    }
+    .rank-score-wrap { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; }
+
+    /* ── Banner aktif ── */
+    .lb-active-banner {
+      display:flex; align-items:center; gap:10px;
+      padding:0.875rem 1rem;
+      background:#fef3e2; border:1px solid #f9b97a;
+      border-radius:var(--radius); margin-bottom:1.5rem;
+      font-size:0.875rem; color:#7c3200;
+    }
+    .lb-active-banner svg { flex-shrink:0; }
+
+    /* ── Tabel tim ── */
+    .lb-table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    .lb-table th {
+      text-align:left; padding:0.625rem 0.875rem;
+      font-size:0.75rem; font-weight:600; color:var(--muted);
+      border-bottom:2px solid var(--border); background:var(--surface); white-space:nowrap;
+    }
+    .lb-table th.sortable { cursor:pointer; user-select:none; }
+    .lb-table th.sortable:hover { color:var(--text-secondary,#555); }
+    .lb-table th.sort-active { color:var(--primary); }
+    .lb-table td { padding:0.75rem 0.875rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .lb-table tr:last-child td { border-bottom:none; }
+    .lb-table tbody tr { animation:slideUp 0.3s ease both; }
+    .lb-table tbody tr:hover { background:var(--surface); }
+    .lb-table tr.rank-1-row { background:#fffdf5; }
+    .lb-table tr.rank-2-row { background:#fafafa; }
+    .lb-table tr.rank-3-row { background:#fdf8f2; }
+    .lb-table td.rank-bar { width:5px; padding:0; }
+    .sort-arrow { opacity:0.5; margin-left:3px; }
+    .sort-active .sort-arrow { opacity:1; }
+    @media (max-width:480px) { .lb-table th,.lb-table td { padding:0.5rem 0.625rem; font-size:0.8125rem; } }
   </style>
 </head>
 <body>
@@ -282,7 +220,6 @@
         <p class="page-subtitle">Hasil ZI Challenge — tampil setelah periode ditutup</p>
       </div>
 
-      <!-- Loading state -->
       <div id="loading" class="loading-overlay">
         <div>
           <div class="spinner" style="margin:0 auto 12px;"></div>
@@ -290,10 +227,8 @@
         </div>
       </div>
 
-      <!-- Main content (hidden until loaded) -->
       <div id="lb-content" style="display:none;">
 
-        <!-- Banner jika ada challenge aktif -->
         <div id="active-banner" class="lb-active-banner" style="display:none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
@@ -303,37 +238,30 @@
           <span id="active-banner-text"></span>
         </div>
 
-        <!-- Pilih Challenge -->
         <div class="lb-header">
           <div class="lb-select-wrap">
-            <label for="challenge-select" style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">
-              Pilih Challenge:
-            </label>
+            <label for="challenge-select" style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);white-space:nowrap;">Pilih Challenge:</label>
             <select id="challenge-select" class="lb-select" onchange="pilihChallenge(this.value)">
               <option value="">— Pilih challenge —</option>
             </select>
           </div>
         </div>
 
-        <!-- Empty: belum pilih -->
         <div id="state-pilih" class="empty-state" style="display:none;">
           <div class="empty-state-icon">🏆</div>
           <div class="empty-state-title">Pilih challenge untuk melihat hasil</div>
           <div class="empty-state-sub">Dropdown di atas menampilkan challenge yang sudah selesai</div>
         </div>
-
-        <!-- Empty: belum ada yang selesai -->
         <div id="state-kosong" class="empty-state" style="display:none;">
           <div class="empty-state-icon">📭</div>
           <div class="empty-state-title">Belum ada challenge yang selesai</div>
           <div class="empty-state-sub">Leaderboard akan tersedia setelah periode Challenge pertama ditutup</div>
         </div>
 
-        <!-- Leaderboard hasil -->
         <div id="state-hasil" style="display:none;">
 
-          <!-- Stats -->
-          <div class="lb-stats">
+          <!-- 5 kolom: 3 stat + 2 highlight -->
+          <div class="lb-summary">
             <div class="stat-card">
               <div class="stat-label">Peserta</div>
               <div class="stat-value" id="stat-peserta">—</div>
@@ -349,11 +277,7 @@
               <div class="stat-value" id="stat-avg">—</div>
               <div class="stat-sub">dari 100</div>
             </div>
-          </div>
-
-          <!-- Highlight peringkat 1 -->
-          <div class="lb-highlight" id="lb-highlight" style="display:none;">
-            <div class="lb-highlight-card">
+            <div class="lb-highlight-card winner-individu" id="lb-highlight" style="display:none;">
               <div class="lb-highlight-medal">🥇</div>
               <div style="min-width:0;">
                 <div class="lb-highlight-label">Individu Terbaik</div>
@@ -361,8 +285,8 @@
                 <div class="lb-highlight-score" id="highlight-individu-nilai">—</div>
               </div>
             </div>
-            <div class="lb-highlight-card">
-              <div class="lb-highlight-medal">🥇</div>
+            <div class="lb-highlight-card winner-tim" id="lb-highlight-tim" style="display:none;">
+              <div class="lb-highlight-medal">🏆</div>
               <div style="min-width:0;">
                 <div class="lb-highlight-label">Tim Terbaik</div>
                 <div class="lb-highlight-name" id="highlight-tim-nama">—</div>
@@ -371,34 +295,61 @@
             </div>
           </div>
 
-          <!-- Tabs -->
           <div class="lb-tabs">
-            <button class="lb-tab active" onclick="gantiTab('individu', this)">Individu</button>
-            <button class="lb-tab" onclick="gantiTab('ruangan', this)">Tim / Ruangan</button>
+            <button class="lb-tab active" onclick="gantiTab('individu',this)">Individu</button>
+            <button class="lb-tab"        onclick="gantiTab('ruangan',this)">Tim / Ruangan</button>
           </div>
 
-          <!-- Tab: Individu -->
+          <!-- Tab Individu -->
           <div id="tab-individu">
+            <!-- Podium: urutan kolom 2-1-3 agar tengah tertinggi -->
+            <div class="podium" id="podium-wrap" style="display:none;">
+              <div class="podium-slot p2" id="podium-2">
+                <div class="podium-card">
+                  <span class="podium-medal">🥈</span>
+                  <div class="podium-name"  id="p2-nama">—</div>
+                  <div class="podium-score" id="p2-score">—</div>
+                  <div class="podium-meta"  id="p2-meta"></div>
+                </div>
+                <div class="podium-bar">2</div>
+              </div>
+              <div class="podium-slot p1" id="podium-1">
+                <div class="podium-card">
+                  <span class="podium-medal">🥇</span>
+                  <div class="podium-name"  id="p1-nama">—</div>
+                  <div class="podium-score" id="p1-score">—</div>
+                  <div class="podium-meta"  id="p1-meta"></div>
+                </div>
+                <div class="podium-bar">1</div>
+              </div>
+              <div class="podium-slot p3" id="podium-3">
+                <div class="podium-card">
+                  <span class="podium-medal">🥉</span>
+                  <div class="podium-name"  id="p3-nama">—</div>
+                  <div class="podium-score" id="p3-score">—</div>
+                  <div class="podium-meta"  id="p3-meta"></div>
+                </div>
+                <div class="podium-bar">3</div>
+              </div>
+            </div>
+            <div id="tie-note" style="display:none;font-size:0.8125rem;color:var(--muted);margin-bottom:1rem;">
+              ⏱ Waktu submit ditampilkan untuk peserta dengan nilai yang sama
+            </div>
             <div id="rank-individu" class="rank-list"></div>
           </div>
 
-          <!-- Tab: Tim / Ruangan -->
+          <!-- Tab Tim -->
           <div id="tab-ruangan" style="display:none;">
             <div class="card" style="padding:0;overflow:hidden;">
               <table class="lb-table">
                 <thead>
                   <tr>
+                    <th style="width:5px;padding:0;"></th>
                     <th style="width:44px;text-align:center;">#</th>
                     <th>Ruangan</th>
-                    <th class="sortable sort-active" id="th-skor" onclick="sortTim('skor')">
-                      Skor Tim <span class="sort-arrow">↓</span>
-                    </th>
-                    <th class="sortable" id="th-rata" onclick="sortTim('rata')">
-                      Rata-rata <span class="sort-arrow">↕</span>
-                    </th>
-                    <th class="sortable" id="th-partisipasi" onclick="sortTim('partisipasi_pct')">
-                      Partisipasi <span class="sort-arrow">↕</span>
-                    </th>
+                    <th class="sortable sort-active" id="th-skor"        onclick="sortTim('skor')">Skor Tim <span class="sort-arrow">↓</span></th>
+                    <th class="sortable"             id="th-rata"        onclick="sortTim('rata')">Rata-rata <span class="sort-arrow">↕</span></th>
+                    <th class="sortable"             id="th-partisipasi" onclick="sortTim('partisipasi_pct')">Partisipasi <span class="sort-arrow">↕</span></th>
                   </tr>
                 </thead>
                 <tbody id="tbody-ruangan"></tbody>
@@ -410,7 +361,7 @@
           </div>
 
         </div>
-      </div><!-- /lb-content -->
+      </div>
     </main>
   </div>
 
@@ -418,18 +369,15 @@
   <script src="js/auth.js"></script>
   <script src="js/sidebar.js"></script>
   <script>
-  /* ============================================================
-     leaderboard.js (inline)
-     ============================================================ */
 
-  let allChallenges   = [];   // semua baris dari sheet
-  let selesaiList     = [];   // hanya status = selesai
-  let dataLeaderboard = {};   // cache per challenge id
-  let cachedTimRows   = [];   // baris ruangan untuk sort
+  let allChallenges   = [];
+  let selesaiList     = [];
+  let dataLeaderboard = {};
+  let cachedTimRows   = [];
   let timSortKey      = 'skor';
   let timSortAsc      = false;
 
-  // Total pegawai per ruangan — hardcode sementara, ganti query Supabase saat data lengkap
+  // Hardcode sementara — ganti query Supabase saat data pegawai lengkap
   const TOTAL_PER_RUANGAN = {
     'Umum Atas'   : 10,
     'Umum Bawah'  : 10,
@@ -438,32 +386,39 @@
     'Petis Manis' : 6,
   };
 
-  /* ── Helpers ───────────────────────────────────────────────── */
-
-  function buildWindowISO(tanggal, jam) {
-    // tanggal: DD/MM/YYYY, jam: H:MM atau HH:MM
-    const parts = tanggal.split('/');
-    if (parts.length !== 3) return null;
-    const [dd, mm, yyyy] = parts;
-    const [h, m] = jam.trim().split(':');
-    const jamPad = `${String(h).padStart(2,'0')}:${String(m || '00').padStart(2,'0')}`;
-    return `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T${jamPad}:00`;
-  }
+  /* ── Helpers ── */
 
   function labelChallenge(c) {
-    const area = [c.nama_area_1 || c.area_1, c.nama_area_2 || c.area_2]
-      .filter(Boolean).join(' + ');
-    return `${c.judul}${area ? ' — ' + area : ''}`;
+    const area = [c.nama_area_1||c.area_1, c.nama_area_2||c.area_2].filter(Boolean).join(' + ');
+    return `${c.judul}${area ? ' — '+area : ''}`;
   }
 
-  function medalEmoji(rank) {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return null;
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  /* ── Tab toggle ─────────────────────────────────────────────── */
+  function formatWaktuSubmit(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const jam = String(d.getHours()).padStart(2,'0');
+    const mnt = String(d.getMinutes()).padStart(2,'0');
+    return `${jam}:${mnt}`;
+  }
+
+  function countUp(elId, target, duration) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const start = Date.now();
+    const tick = () => {
+      const pct  = Math.min((Date.now() - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - pct, 3);
+      el.textContent = Math.round(ease * target);
+      if (pct < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Tab ── */
 
   function gantiTab(tab, btn) {
     document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
@@ -472,24 +427,17 @@
     document.getElementById('tab-ruangan').style.display  = tab === 'ruangan'  ? 'block' : 'none';
   }
 
-  /* ── Pilih challenge dari dropdown ─────────────────────────── */
+  /* ── Pilih challenge ── */
 
   async function pilihChallenge(challengeId) {
     tampilState('pilih');
     if (!challengeId) return;
-
     const c = selesaiList.find(x => x.id === challengeId);
     if (!c) return;
-
     tampilState('loading-inline');
 
-    // Cache check
-    if (dataLeaderboard[challengeId]) {
-      renderHasil(dataLeaderboard[challengeId], c);
-      return;
-    }
+    if (dataLeaderboard[challengeId]) { renderHasil(dataLeaderboard[challengeId], c); return; }
 
-    // Query riwayat_kuis by challenge_id + join pegawai
     const { data, error } = await db
       .from('riwayat_kuis')
       .select('pegawai_id, nilai, waktu, pegawai(id, nama_samaran, ruangan, satker)')
@@ -502,7 +450,6 @@
       return;
     }
 
-    // Aggregate per pegawai: SUM nilai + MAX waktu (= waktu submit soal terakhir)
     const byPegawai = {};
     (data || []).forEach(row => {
       const pid = row.pegawai_id;
@@ -512,24 +459,20 @@
       const ts = row.waktu ? new Date(row.waktu).getTime() : 0;
       if (!byPegawai[pid]) {
         byPegawai[pid] = {
-          pegawai_id   : pid,
-          nama_samaran : profil.nama_samaran || '(tanpa nama)',
-          ruangan      : profil.ruangan || '',
-          satker       : profil.satker || '',
-          nilai        : 0,
-          waktu_submit : 0,
+          pegawai_id  : pid,
+          nama_samaran: profil.nama_samaran || '(tanpa nama)',
+          ruangan     : profil.ruangan || '',
+          satker      : profil.satker || '',
+          nilai       : 0,
+          waktu_submit: 0,
         };
       }
       byPegawai[pid].nilai += n;
       if (ts > byPegawai[pid].waktu_submit) byPegawai[pid].waktu_submit = ts;
     });
 
-    // Bulatkan dan cap di 100
-    Object.values(byPegawai).forEach(p => {
-      p.nilai = Math.min(100, Math.round(p.nilai));
-    });
+    Object.values(byPegawai).forEach(p => { p.nilai = Math.min(100, Math.round(p.nilai)); });
 
-    // Sort: nilai DESC, waktu_submit ASC (submit lebih awal menang tiebreaker)
     const result = Object.values(byPegawai).sort((a, b) =>
       b.nilai - a.nilai || a.waktu_submit - b.waktu_submit
     );
@@ -537,247 +480,226 @@
     renderHasil(result, c);
   }
 
-  /* ── Render hasil ───────────────────────────────────────────── */
+  /* ── Render ── */
 
   function renderHasil(rows, challenge) {
     if (!rows.length) {
       tampilState('pilih');
-      document.getElementById('state-pilih').querySelector('.empty-state-title').textContent =
+      document.querySelector('#state-pilih .empty-state-title').textContent =
         'Belum ada peserta yang mengerjakan challenge ini';
       return;
     }
 
     tampilState('hasil');
 
-    // Stats
     const nilaiList = rows.map(r => r.nilai);
-    const max = Math.max(...nilaiList);
-    const avg = Math.round(nilaiList.reduce((a, b) => a + b, 0) / nilaiList.length);
-    document.getElementById('stat-peserta').textContent = rows.length;
-    document.getElementById('stat-max').textContent     = max;
-    document.getElementById('stat-avg').textContent     = avg;
+    const maxVal    = Math.max(...nilaiList);
+    const avgVal    = Math.round(nilaiList.reduce((a,b) => a+b,0) / nilaiList.length);
+    countUp('stat-peserta', rows.length, 600);
+    countUp('stat-max',     maxVal,      700);
+    countUp('stat-avg',     avgVal,      700);
 
-    // Highlight peringkat 1
-    const top1Individu = rows[0];
-    document.getElementById('highlight-individu-nama').textContent  = top1Individu.nama_samaran;
-    document.getElementById('highlight-individu-nilai').textContent = `${top1Individu.nilai} poin`;
-
-    // Tim terbaik diisi setelah cachedTimRows selesai dihitung — lihat renderTimHighlight()
+    // Highlight individu
+    const top1 = rows[0];
+    document.getElementById('highlight-individu-nama').textContent  = top1.nama_samaran;
+    document.getElementById('highlight-individu-nilai').textContent = `${top1.nilai} poin`;
     document.getElementById('lb-highlight').style.display = '';
 
-    // Individu ranking
-    renderRankList('rank-individu', rows, (row, rank) => ({
-      label: row.nama_samaran,
-      meta : row.ruangan || '',
-      nilai: row.nilai,
-      rank,
-    }));
+    // Podium
+    const hasPodium = rows.length >= 2;
+    document.getElementById('podium-wrap').style.display = hasPodium ? 'grid' : 'none';
+    if (hasPodium) {
+      // Cari nilai yang duplikat di top 3 untuk tooltip
+      const top3 = [rows[0], rows[1], rows[2]].filter(Boolean);
+      const nilaiCount = {};
+      top3.forEach(r => { nilaiCount[r.nilai] = (nilaiCount[r.nilai]||0)+1; });
 
-    // Tim / Ruangan
-    const byRuangan = {};
-    rows.forEach(r => {
-      const room = r.ruangan;
-      if (!room) return;
-      if (!byRuangan[room]) byRuangan[room] = [];
-      byRuangan[room].push(r.nilai);
-    });
-
-    if (Object.keys(byRuangan).length === 0) {
-      document.getElementById('tbody-ruangan').innerHTML =
-        '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Data ruangan tidak tersedia</td></tr>';
-    } else {
-      cachedTimRows = Object.entries(byRuangan).map(([room, values]) => {
-        const total          = TOTAL_PER_RUANGAN[room] || null;
-        const ikut           = values.length;
-        const rata           = values.reduce((a, b) => a + b, 0) / ikut;
-        const partisipasi_pct = total ? (ikut / total) * 100 : 100;
-        const skor           = rata * (partisipasi_pct / 100);
-        return { ruangan: room, ikut, total, rata, partisipasi_pct, skor };
-      });
-      timSortKey = 'skor';
-      timSortAsc = false;
-      renderTimTable();
-      renderTimHighlight();
+      const fill = (n, row) => {
+        const el = document.getElementById(`podium-${n}`);
+        if (!row) { el.style.display='none'; return; }
+        el.style.display = '';
+        document.getElementById(`p${n}-nama`).textContent = row.nama_samaran;
+        document.getElementById(`p${n}-meta`).textContent = row.ruangan || '';
+        const scoreEl = document.getElementById(`p${n}-score`);
+        if (nilaiCount[row.nilai] > 1 && row.waktu_submit) {
+          scoreEl.innerHTML = `${row.nilai}<span class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit)}</span>`;
+        } else {
+          scoreEl.textContent = row.nilai;
+        }
+      };
+      fill(1, rows[0]); fill(2, rows[1]); fill(3, rows[2] || null);
     }
-  }
 
-  function renderRankList(elId, rows, mapper) {
-    const el = document.getElementById(elId);
-    el.innerHTML = rows.map((row, i) => {
-      const rank  = i + 1;
-      const medal = medalEmoji(rank);
-      const m     = mapper(row, rank);
-      const rankEl = medal
-        ? `<div class="rank-medal">${medal}</div>`
-        : `<div class="rank-num">${rank}</div>`;
+    // Rank list pos 4+ — tooltip waktu submit untuk semua yang nilai-nya tidak unik
+    const rest = rows.slice(hasPodium ? 3 : 0);
+    const allNilaiCount = {};
+    rows.forEach(r => { allNilaiCount[r.nilai] = (allNilaiCount[r.nilai]||0)+1; });
+    const adaTie = Object.values(allNilaiCount).some(v => v > 1);
+    document.getElementById('tie-note').style.display = adaTie ? '' : 'none';
+
+    document.getElementById('rank-individu').innerHTML = rest.map((row, i) => {
+      const rank    = i + 4;
+      const hasTie  = allNilaiCount[row.nilai] > 1;
+      const scoreEl = hasTie && row.waktu_submit
+        ? `<div class="rank-score-wrap"><div class="rank-score">${row.nilai}</div><div class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit)}</div></div>`
+        : `<div class="rank-score">${row.nilai}</div>`;
 
       return `
-        <div class="rank-item${rank <= 3 ? ' rank-' + rank : ''}">
-          ${rankEl}
+        <div class="rank-item" style="animation-delay:${i*0.04}s">
+          <div class="rank-num">${rank}</div>
           <div class="rank-info">
-            <div class="rank-name">${escHtml(m.label)}</div>
-            ${m.meta ? `<div class="rank-meta">${escHtml(m.meta)}</div>` : ''}
+            <div class="rank-name">${escHtml(row.nama_samaran)}</div>
+            ${row.ruangan ? `<div class="rank-meta">${escHtml(row.ruangan)}</div>` : ''}
           </div>
-          <div class="rank-score">${m.nilai}</div>
+          ${scoreEl}
         </div>`;
     }).join('');
+
+    // Tim
+    const byRuangan = {};
+    rows.forEach(r => {
+      if (!r.ruangan) return;
+      if (!byRuangan[r.ruangan]) byRuangan[r.ruangan] = [];
+      byRuangan[r.ruangan].push(r.nilai);
+    });
+
+    if (!Object.keys(byRuangan).length) {
+      document.getElementById('tbody-ruangan').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Data ruangan tidak tersedia</td></tr>';
+      document.getElementById('lb-highlight-tim').style.display = 'none';
+    } else {
+      cachedTimRows = Object.entries(byRuangan).map(([room, values]) => {
+        const total           = TOTAL_PER_RUANGAN[room] || null;
+        const ikut            = values.length;
+        const rata            = values.reduce((a,b)=>a+b,0) / ikut;
+        const partisipasi_pct = total ? (ikut/total)*100 : 100;
+        const skor            = rata * (partisipasi_pct/100);
+        return { ruangan:room, ikut, total, rata, partisipasi_pct, skor };
+      });
+      timSortKey = 'skor'; timSortAsc = false;
+      renderTimTable();
+
+      const top1Tim = [...cachedTimRows].sort((a,b) => b.skor - a.skor)[0];
+      document.getElementById('highlight-tim-nama').textContent =  top1Tim.ruangan;
+      document.getElementById('highlight-tim-skor').textContent =
+        `Skor ${top1Tim.skor.toFixed(1)} · ${top1Tim.ikut}${top1Tim.total ? '/'+top1Tim.total : ''} peserta`;
+      document.getElementById('lb-highlight-tim').style.display = '';
+    }
   }
 
-  /* ── Tim / Ruangan table ───────────────────────────────────── */
+  /* ── Tim table ── */
 
   function sortTim(key) {
-    if (timSortKey === key) {
-      timSortAsc = !timSortAsc;
-    } else {
-      timSortKey = key;
-      timSortAsc = false;
-    }
+    timSortKey === key ? (timSortAsc = !timSortAsc) : (timSortKey = key, timSortAsc = false);
     renderTimTable();
   }
 
   function renderTimTable() {
-    const sorted = [...cachedTimRows].sort((a, b) => {
+    const sorted = [...cachedTimRows].sort((a,b) => {
       const diff = a[timSortKey] - b[timSortKey];
       return timSortAsc ? diff : -diff;
     });
 
-    // Update header arrows
-    ['skor', 'rata', 'partisipasi_pct'].forEach(k => {
-      const thId = k === 'partisipasi_pct' ? 'th-partisipasi' : `th-${k}`;
-      const th   = document.getElementById(thId);
+    ['skor','rata','partisipasi_pct'].forEach(k => {
+      const thId  = k === 'partisipasi_pct' ? 'th-partisipasi' : `th-${k}`;
+      const th    = document.getElementById(thId);
       if (!th) return;
       const arrow = th.querySelector('.sort-arrow');
-      if (k === timSortKey) {
-        th.classList.add('sort-active');
-        arrow.textContent = timSortAsc ? '↑' : '↓';
-      } else {
-        th.classList.remove('sort-active');
-        arrow.textContent = '↕';
-      }
+      if (k === timSortKey) { th.classList.add('sort-active');    arrow.textContent = timSortAsc ? '↑' : '↓'; }
+      else                  { th.classList.remove('sort-active'); arrow.textContent = '↕'; }
     });
 
-    const tbody = document.getElementById('tbody-ruangan');
-    tbody.innerHTML = sorted.map((row, i) => {
+    const barColor = ['#f59e0b','#9ca3af','#cd7c2f'];
+    document.getElementById('tbody-ruangan').innerHTML = sorted.map((row, i) => {
       const rank     = i + 1;
-      const medal    = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+      const medal    = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
       const rowClass = rank <= 3 ? ` class="rank-${rank}-row"` : '';
+      const bar      = rank <= 3 ? `<td class="rank-bar" style="background:${barColor[rank-1]};"></td>` : `<td class="rank-bar"></td>`;
       const partStr  = row.total
         ? `${row.ikut}/${row.total} <span style="color:var(--muted);">(${row.partisipasi_pct.toFixed(0)}%)</span>`
         : `${row.ikut}/<span style="color:var(--muted);">?</span>`;
-
       return `
-        <tr${rowClass}>
-          <td style="text-align:center;font-size:${rank <= 3 ? '1.125' : '0.875'}rem;">${medal}</td>
+        <tr${rowClass} style="animation-delay:${i*0.04}s">
+          ${bar}
+          <td style="text-align:center;font-size:${rank<=3?'1.125':'0.875'}rem;">${medal}</td>
           <td style="font-weight:600;color:var(--text);">${escHtml(row.ruangan)}</td>
           <td style="font-weight:700;color:var(--primary);font-size:1rem;">${row.skor.toFixed(1)}</td>
-          <td style="color:var(--text-secondary);">${row.rata.toFixed(1)}</td>
+          <td style="color:var(--text-secondary,#555);">${row.rata.toFixed(1)}</td>
           <td style="font-size:0.875rem;">${partStr}</td>
         </tr>`;
     }).join('');
   }
 
-  function renderTimHighlight() {
-    if (!cachedTimRows.length) return;
-    const top1 = [...cachedTimRows].sort((a, b) => b.skor - a.skor)[0];
-    document.getElementById('highlight-tim-nama').textContent  = top1.ruangan;
-    document.getElementById('highlight-tim-skor').textContent  =
-      `Skor ${top1.skor.toFixed(1)} · ${top1.ikut}${top1.total ? '/'+top1.total : ''} peserta`;
-  }
-
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;');
-  }
-
-  /* ── State display ──────────────────────────────────────────── */
+  /* ── State ── */
 
   function tampilState(state) {
-    document.getElementById('state-pilih').style.display   = state === 'pilih'   ? '' : 'none';
-    document.getElementById('state-kosong').style.display  = state === 'kosong'  ? '' : 'none';
-    document.getElementById('state-hasil').style.display   = state === 'hasil'   ? '' : 'none';
-
+    document.getElementById('state-pilih').style.display  = state === 'pilih'  ? '' : 'none';
+    document.getElementById('state-kosong').style.display = state === 'kosong' ? '' : 'none';
+    document.getElementById('state-hasil').style.display  = state === 'hasil'  ? '' : 'none';
     if (state === 'loading-inline') {
-      document.getElementById('state-hasil').style.display  = '';
-      document.getElementById('lb-highlight').style.display = 'none';
-      document.getElementById('stat-peserta').textContent   = '…';
-      document.getElementById('stat-max').textContent       = '…';
-      document.getElementById('stat-avg').textContent       = '…';
-      document.getElementById('rank-individu').innerHTML    =
-        '<div class="loading-overlay"><div class="spinner"></div></div>';
-      document.getElementById('tbody-ruangan').innerHTML    = '';
+      document.getElementById('state-hasil').style.display       = '';
+      document.getElementById('lb-highlight').style.display      = 'none';
+      document.getElementById('lb-highlight-tim').style.display  = 'none';
+      document.getElementById('podium-wrap').style.display       = 'none';
+      document.getElementById('stat-peserta').textContent        = '…';
+      document.getElementById('stat-max').textContent            = '…';
+      document.getElementById('stat-avg').textContent            = '…';
+      document.getElementById('tie-note').style.display           = 'none';
+      document.getElementById('rank-individu').innerHTML         =
+        '<div style="text-align:center;padding:2rem;"><div class="spinner" style="margin:0 auto;"></div></div>';
+      document.getElementById('tbody-ruangan').innerHTML         = '';
     }
   }
 
-  /* ── Init ───────────────────────────────────────────────────── */
+  /* ── Init ── */
 
   (async () => {
-    // Load sidebar
     const sidebarEl = document.getElementById('sidebar-placeholder');
     if (sidebarEl) {
       try {
         const res = await fetch('components/sidebar.html');
         sidebarEl.innerHTML = await res.text();
         initSidebar('leaderboard');
-      } catch (e) {
-        console.error('Sidebar error:', e);
-      }
+      } catch (e) { console.error('Sidebar error:', e); }
     }
 
-    // Fetch challenge sheet
     try {
-      const res  = await fetch(CONFIG.SHEETS_CHALLENGE);
-      const text = await res.text();
-      allChallenges = parseCSV(text);
-    } catch (e) {
-      console.error('Gagal fetch challenge sheet:', e);
-    }
+      const { data: chalData, error: errC } = await db
+        .from('challenge')
+        .select('*')
+        .order('tanggal', { ascending: true });
+      if (errC) throw errC;
+      allChallenges = chalData || [];
+    } catch (e) { console.error('Gagal fetch challenge:', e); }
 
-    // Cek apakah ada challenge aktif sekarang
-    const now = new Date();
-    const aktif = allChallenges.find(c => {
-      if (c.status.toLowerCase() !== 'aktif') return false;
-      const start = new Date(buildWindowISO(c.tanggal, c.jam_buka || '08:00'));
-      const end   = new Date(buildWindowISO(c.tanggal, c.jam_tutup || '23:59'));
-      return now >= start && now <= end;
-    });
-
+    const aktif = allChallenges.find(c => c.status === 'aktif');
     if (aktif) {
-      const banner = document.getElementById('active-banner');
       document.getElementById('active-banner-text').innerHTML =
-        `<strong>${escHtml(aktif.judul)}</strong> sedang berlangsung. ` +
-        `Leaderboard challenge ini akan tampil setelah periode ditutup.`;
-      banner.style.display = 'flex';
+        `<strong>${escHtml(aktif.judul)}</strong> sedang berlangsung. Leaderboard akan tampil setelah ditutup.`;
+      document.getElementById('active-banner').style.display = 'flex';
     }
 
-    // Filter selesai
     selesaiList = allChallenges.filter(c => c.status.toLowerCase() === 'selesai');
 
-    // Sembunyikan loading
-    document.getElementById('loading').style.display  = 'none';
+    
+    document.getElementById('loading').style.display    = 'none';
     document.getElementById('lb-content').style.display = '';
 
-    if (selesaiList.length === 0) {
-      tampilState('kosong');
-      return;
-    }
+    if (!selesaiList.length) { tampilState('kosong'); return; }
 
-    // Isi dropdown
     const select = document.getElementById('challenge-select');
     selesaiList.forEach(c => {
-      const opt    = document.createElement('option');
-      opt.value    = c.id;
+      const opt = document.createElement('option');
+      opt.value = c.id;
       opt.textContent = labelChallenge(c) + ` (${formatTanggal(c.tanggal)})`;
       select.appendChild(opt);
     });
 
-    // Auto-pilih yang paling baru
     const latest = selesaiList[selesaiList.length - 1];
     select.value = latest.id;
     pilihChallenge(latest.id);
   })();
+
   </script>
 </body>
 </html>

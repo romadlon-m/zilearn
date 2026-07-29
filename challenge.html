@@ -116,6 +116,35 @@
         <div class="spinner"></div>
       </div>
 
+      <!-- State: tidak ada challenge aktif -->
+      <div id="state-tidak-ada" style="display:none;">
+        <div class="page-header">
+          <h1 class="page-title">ZI Challenge</h1>
+        </div>
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">📅</div>
+          <h3 style="margin-bottom:8px;">Belum ada challenge tersedia</h3>
+          <p style="font-size:0.9375rem;color:var(--text-secondary);">
+            Challenge mingguan belum dimulai. Pantau pengumuman di grup WhatsApp.
+          </p>
+        </div>
+      </div>
+
+      <!-- State: challenge sudah selesai -->
+      <div id="state-selesai" style="display:none;">
+        <div class="page-header">
+          <h1 class="page-title">ZI Challenge</h1>
+        </div>
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🏁</div>
+          <h3 style="margin-bottom:8px;">Challenge minggu ini sudah ditutup</h3>
+          <p style="margin-bottom:1.5rem;font-size:0.9375rem;color:var(--text-secondary);">
+            Leaderboard akan segera tersedia. Sampai jumpa minggu depan!
+          </p>
+          <a href="leaderboard.html" class="btn btn-outline">Lihat Leaderboard</a>
+        </div>
+      </div>
+
       <!-- State: butuh login -->
       <div id="state-login" style="display:none;">
         <div class="page-header">
@@ -251,44 +280,49 @@ const BACA_DETIK    = 5;
   await muatChallenge();
 })();
 
-/* ── Muat challenge aktif dari Sheets ───────────────────── */
+/* ── Muat challenge aktif dari Supabase ─────────────────── */
 async function muatChallenge() {
   tampilState('loading');
   try {
-    // Fetch challenge aktif
-    const resC  = await fetch(CONFIG.SHEETS_CHALLENGE);
-    const textC = await resC.text();
-    const challenges = parseCSV(textC);
-    challengeAktif = challenges.find(c => c.status.toLowerCase() === 'aktif');
+    // Query challenge aktif dari Supabase
+    const { data: chalData, error: errC } = await db
+      .from('challenge')
+      .select('*')
+      .eq('status', 'aktif')
+      .limit(1);
+    if (errC) throw errC;
+    challengeAktif = chalData?.[0] || null;
 
-    // Fetch soal
+    // Fetch soal (masih dari sheet)
     const resS  = await fetch(CONFIG.SHEETS_SOAL);
     const textS = await resS.text();
     const semuaSoal = parseCSV(textS);
 
     let soalPool = [];
 
-    if (challengeAktif) {
-      // Ambil soal berdasarkan area Challenge
-      const areas = [challengeAktif.area_1, challengeAktif.area_2].filter(Boolean);
-      const jumlahSoal  = parseInt(challengeAktif.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
-      const soalPerArea = Math.floor(jumlahSoal / areas.length);
-
-      areas.forEach(area => {
-        const pool = semuaSoal.filter(s => s.pilar === area && s.soal && s.opsi_a && s.opsi_b && s.jawaban);
-        // Soal insight guaranteed muncul
-        const insight  = pool.filter(s => s.tipe_soal === 'insight').slice(0, 1);
-        const reguler  = acak(pool.filter(s => s.tipe_soal !== 'insight')).slice(0, soalPerArea - insight.length);
-        soalPool = soalPool.concat(insight, reguler);
-      });
-    } else {
-      // Tidak ada challenge aktif — ambil semua soal acak
-      const valid = semuaSoal.filter(s => s.soal && s.opsi_a && s.opsi_b && s.jawaban);
-      soalPool = acak(valid).slice(0, CONFIG.QUIZ_JUMLAH_SOAL);
+    // Cek status challenge
+    if (!challengeAktif) {
+      // Cek apakah ada yang selesai (untuk pesan yang lebih kontekstual)
+      const { data: chalSelesai } = await db
+        .from('challenge').select('id').eq('status', 'Selesai').limit(1);
+      tampilState(chalSelesai?.length ? 'selesai' : 'tidak-ada');
+      return;
     }
 
+    // Ada challenge aktif — ambil soal berdasarkan area
+    const areas = [challengeAktif.area_1, challengeAktif.area_2].filter(Boolean);
+    const jumlahSoal  = parseInt(challengeAktif.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
+    const soalPerArea = Math.floor(jumlahSoal / areas.length);
+
+    areas.forEach(area => {
+      const pool = semuaSoal.filter(s => s.pilar === area && s.soal && s.opsi_a && s.opsi_b && s.jawaban);
+      const insight = pool.filter(s => s.tipe_soal === 'insight').slice(0, 1);
+      const reguler = acak(pool.filter(s => s.tipe_soal !== 'insight')).slice(0, soalPerArea - insight.length);
+      soalPool = soalPool.concat(insight, reguler);
+    });
+
     if (soalPool.length === 0) {
-      tampilState('login');
+      tampilState('tidak-ada');
       return;
     }
 
@@ -602,7 +636,7 @@ function tampilHasil(skor, benar, salah) {
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function tampilState(state) {
-  ['loading','login','pilih','kuis','hasil'].forEach(s => {
+  ['loading','login','tidak-ada','selesai','pilih','kuis','hasil'].forEach(s => {
     document.getElementById(`state-${s}`).style.display = s === state ? 'block' : 'none';
   });
 }

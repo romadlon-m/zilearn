@@ -13,7 +13,6 @@ const CONFIG = {
   SHEETS_INSIGHT  : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=1014653976&single=true&output=csv',
   SHEETS_LIBRARY  : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=1911028908&single=true&output=csv',
   SHEETS_SOAL     : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=438869818&single=true&output=csv',
-  SHEETS_CHALLENGE: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=997183548&single=true&output=csv',
 
   /* ── Nama Platform ────────────────────────────────────── */
   APP_NAME      : 'ZI Learning',
@@ -25,6 +24,9 @@ const CONFIG = {
   /* ── Role ─────────────────────────────────────────────── */
   ROLE_PEGAWAI  : 'pegawai',
   ROLE_ADMIN    : 'admin',
+
+  /* ── Mode development — set false saat production ────── */
+  DEV_MODE      : true,
 
 };
 

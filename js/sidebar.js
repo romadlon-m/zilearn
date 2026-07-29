@@ -36,6 +36,15 @@ async function loadSidebar(activePage) {
   await renderSidebarFooter();
 }
 
+/* ── initSidebar — untuk halaman yang fetch sidebar.html sendiri ── */
+async function initSidebar(activePage) {
+  const items = document.querySelectorAll('.sidebar-item[data-page]');
+  items.forEach(item => {
+    item.classList.toggle('active', item.dataset.page === activePage);
+  });
+  await renderSidebarFooter();
+}
+
 async function renderSidebarFooter() {
   const footer  = document.getElementById('sidebar-footer');
   if (!footer) return;
@@ -67,6 +76,14 @@ async function renderSidebarFooter() {
   const nama   = profil?.nama ?? 'Pegawai';
   const role   = profil?.role === CONFIG.ROLE_ADMIN ? 'Admin' : 'Pegawai';
   const inisial = getInisial(nama);
+
+  // Tampilkan menu admin hanya untuk role admin
+  if (profil?.role === CONFIG.ROLE_ADMIN) {
+    const menuAdmin    = document.getElementById('menu-admin');
+    const dividerAdmin = document.getElementById('divider-admin');
+    if (menuAdmin)    menuAdmin.style.display    = 'flex';
+    if (dividerAdmin) dividerAdmin.style.display = 'block';
+  }
 
   footer.innerHTML = `
     <div class="sidebar-user">
