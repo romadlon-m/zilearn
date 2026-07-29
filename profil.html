@@ -189,7 +189,6 @@ let profilData = null;
   if (!profilData) { window.location.replace('login.html'); return; }
 
   renderProfil(profilData);
-  cekHasilLinking();
 
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-konten').style.display  = '';
@@ -224,7 +223,7 @@ function renderGoogleStatus(email) {
   const wrap = document.getElementById('google-status-wrap');
   if (email) {
     wrap.innerHTML = `
-      <div class="google-status linked" style="margin-bottom:0.75rem;">
+      <div class="google-status linked">
         <svg width="18" height="18" viewBox="0 0 48 48">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -233,11 +232,7 @@ function renderGoogleStatus(email) {
         </svg>
         <span style="flex:1;">Terhubung dengan <strong>${escHtml(email)}</strong></span>
         <span style="font-size:1rem;">✅</span>
-      </div>
-      <button class="btn btn-outline" onclick="konfirmasiUnlink()"
-        style="font-size:0.8125rem;color:var(--danger);border-color:var(--danger);">
-        Putuskan Akun Google
-      </button>`;
+      </div>`;
   } else {
     wrap.innerHTML = `
       <div class="google-status unlinked" style="margin-bottom:0.75rem;">
@@ -296,80 +291,22 @@ async function simpanSamaran() {
   }
 }
 
-/* ── Putuskan Google ─────────────────────────────────────── */
-function konfirmasiUnlink() {
-  if (!confirm('Putuskan akun Google dari profil ini?\n\nSetelah diputus, kamu hanya bisa login dengan NIP.')) return;
-  unlinkGoogle();
-}
-
-async function unlinkGoogle() {
-  const el = document.getElementById('alert-google-error');
-  el.style.display = 'none';
-
-  if (!profilData?.id) return;
-
-  const { error } = await db
-    .from('pegawai')
-    .update({ google_email: null })
-    .eq('id', profilData.id);
-
-  if (error) {
-    el.textContent = 'Gagal memutuskan akun Google: ' + error.message;
-    el.style.display = 'flex';
-    return;
-  }
-
-  if (profilData) profilData.google_email = null;
-  renderGoogleStatus(null);
-
-  el.textContent   = 'Akun Google berhasil diputuskan.';
-  el.className     = 'alert alert-success mb-4';
-  el.style.display = 'flex';
-  setTimeout(() => { el.style.display = 'none'; el.className = 'alert alert-danger mb-4'; }, 3000);
-}
-
 /* ── Hubungkan Google ────────────────────────────────────── */
 function hubungkanGoogle() {
-  if (!profilData?.id) return;
-  // Simpan pegawai_id agar callback bisa update record yang tepat
   sessionStorage.setItem('zi_google_action', 'link');
-  sessionStorage.setItem('zi_link_pegawai_id', profilData.id);
   handleLoginGoogle();
 }
 
 async function handleLoginGoogle() {
-  const redirectTo = window.location.href
-    .split('/').slice(0, -1).join('/') + '/google-callback.html';
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo },
+    options: {
+      redirectTo: window.location.origin + '/google-callback.html',
+    },
   });
   if (error) {
     const el = document.getElementById('alert-google-error');
     el.textContent = 'Gagal memulai login Google: ' + error.message;
-    el.style.display = 'flex';
-  }
-}
-
-// Cek hasil linking dari callback (via sessionStorage)
-function cekHasilLinking() {
-  const sukses = sessionStorage.getItem('zi_link_success');
-  const gagal  = sessionStorage.getItem('zi_link_error');
-  if (sukses) {
-    sessionStorage.removeItem('zi_link_success');
-    if (profilData) profilData.google_email = sukses;
-    renderGoogleStatus(sukses);
-    // Tampilkan pesan sukses
-    const el = document.getElementById('alert-google-error');
-    el.textContent   = `Akun Google (${sukses}) berhasil dihubungkan.`;
-    el.className     = 'alert alert-success mb-4';
-    el.style.display = 'flex';
-    setTimeout(() => { el.style.display = 'none'; el.className = 'alert alert-danger mb-4'; }, 4000);
-  }
-  if (gagal) {
-    sessionStorage.removeItem('zi_link_error');
-    const el = document.getElementById('alert-google-error');
-    el.textContent = gagal;
     el.style.display = 'flex';
   }
 }
