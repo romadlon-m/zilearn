@@ -26,9 +26,27 @@
 
     <div class="form-group">
       <label class="form-label">Nama</label>
-      <select id="select-nama" class="form-select">
-        <option value="">— Memuat daftar pegawai... —</option>
-      </select>
+      <div id="nama-dropdown" style="position:relative;">
+        <input
+          type="text"
+          id="input-cari-nama"
+          class="form-input"
+          placeholder="Ketik nama untuk mencari..."
+          autocomplete="off"
+          oninput="filterNama()"
+          onfocus="bukaDropdown()"
+          onblur="setTimeout(tutupDropdown, 150)"
+        >
+        <div id="nama-list" style="
+          display:none;position:absolute;top:100%;left:0;right:0;
+          background:#fff;border:1.5px solid var(--primary);
+          border-top:none;border-radius:0 0 var(--radius) var(--radius);
+          max-height:220px;overflow-y:auto;z-index:100;
+          box-shadow:0 4px 12px rgba(0,0,0,0.1);
+        "></div>
+      </div>
+      <!-- Hidden field untuk menyimpan id pegawai yang dipilih -->
+      <input type="hidden" id="selected-pegawai-id">
     </div>
 
     <div class="form-group">
@@ -96,8 +114,98 @@
     </div>
   </div>
 
+  <style>
+    .nama-item {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--surface);
+      color: var(--text);
+    }
+    .nama-item:last-child { border-bottom: none; }
+    .nama-item:hover, .nama-item.aktif { background: var(--primary-light); color: var(--primary-dark); }
+    .nama-item-kosong { padding: 10px 14px; font-size: 0.875rem; color: var(--muted); }
+  </style>
+
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script>
+  // Searchable dropdown — jalan sebelum login.js
+  let semuaPegawai = [];
+  let pegawaiDipilih = null;
+
+  // Override fungsi populateNama dari login.js agar pakai dropdown ini
+  window._namaLoaded = false;
+
+  async function muatDaftarNama() {
+    const daftar = await getDaftarPegawai();
+    semuaPegawai = daftar;
+    window._namaLoaded = true;
+    document.getElementById('input-cari-nama').placeholder = 'Ketik nama untuk mencari...';
+    renderDaftarNama(semuaPegawai);
+
+    // Restore remember-me: cari pegawai by nip_suffix yang tersimpan
+    const savedNip = localStorage.getItem('zi_remembered_nip');
+    if (savedNip) {
+      const p = semuaPegawai.find(x => x.nip_suffix === savedNip);
+      if (p) {
+        pilihNama(p.nip_suffix, p.nama);
+        document.getElementById('remember-me').checked = true;
+      }
+    }
+  }
+
+  function renderDaftarNama(list) {
+    const listEl = document.getElementById('nama-list');
+    if (!list.length) {
+      listEl.innerHTML = '<div class="nama-item-kosong">Tidak ditemukan</div>';
+      return;
+    }
+    listEl.innerHTML = list.map(p => `
+      <div class="nama-item" data-nip="${escLoginHtml(p.nip_suffix)}"
+        onmousedown="pilihNama('${escLoginHtml(p.nip_suffix)}', '${escLoginHtml(p.nama)}')">
+        ${escLoginHtml(p.nama)}
+      </div>`).join('');
+  }
+
+  function filterNama() {
+    pegawaiDipilih = null;
+    document.getElementById('selected-pegawai-id').value = '';
+    const q = document.getElementById('input-cari-nama').value.toLowerCase().trim();
+    const filtered = q
+      ? semuaPegawai.filter(p => p.nama.toLowerCase().includes(q))
+      : semuaPegawai;
+    renderDaftarNama(filtered);
+    bukaDropdown();
+  }
+
+  function pilihNama(nipSuffix, nama) {
+    pegawaiDipilih = { nipSuffix, nama };
+    document.getElementById('input-cari-nama').value     = nama;
+    document.getElementById('selected-pegawai-id').value = nipSuffix;
+    tutupDropdown();
+    setTimeout(() => document.getElementById('input-nip').focus(), 50);
+  }
+
+  function bukaDropdown() {
+    if (!window._namaLoaded) return;
+    document.getElementById('nama-list').style.display = 'block';
+  }
+
+  function tutupDropdown() {
+    document.getElementById('nama-list').style.display = 'none';
+  }
+
+  function escLoginHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // Helper global untuk login.js — ambil id pegawai yang dipilih dari dropdown baru
+  window.getSelectedPegawaiId = () => document.getElementById('selected-pegawai-id').value || null;
+
+  // Muat daftar nama saat halaman siap
+  document.addEventListener('DOMContentLoaded', muatDaftarNama);
+  </script>
   <script src="js/login.js"></script>
 
 </body>

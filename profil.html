@@ -3,135 +3,339 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nama Samaran — ZI Learning</title>
+  <title>Profil — ZI Learning</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .profil-section {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .profil-section-title {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.125rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .profil-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--surface);
+    }
+    .profil-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .profil-label {
+      font-size: 0.8125rem;
+      color: var(--muted);
+      width: 120px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .profil-value {
+      font-size: 0.9375rem;
+      color: var(--text);
+      font-weight: 500;
+      flex: 1;
+    }
+    .banner-samaran {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #fff7ed;
+      border: 2px solid #f97316;
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .google-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+    }
+    .google-status.linked {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      color: #166534;
+    }
+    .google-status.unlinked {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--text-secondary);
+    }
+  </style>
 </head>
-<body class="login-body">
+<body>
 
-  <div class="login-card" style="max-width:440px;">
+<div class="app-layout">
+  <div id="sidebar-container"></div>
 
-    <div class="login-logo">
-      <img src="assets/images/Logo_ZI_Learning.png" alt="ZI Learning">
-      <div class="login-logo-sub">BPS Provinsi Kepulauan Bangka Belitung</div>
+  <main class="main-content">
+
+    <div id="state-loading" class="loading-overlay">
+      <div class="spinner"></div>
     </div>
 
-    <div id="mode-pertama">
-      <h2 style="font-size:1.125rem;margin-bottom:6px;">Satu langkah lagi! 🎉</h2>
-      <p style="font-size:0.875rem;margin-bottom:1.5rem;color:var(--text-secondary);">
-        Pilih nama samaran yang akan tampil di leaderboard ZI Challenge.
-        Nama ini tidak menampilkan identitas aslimu.
-      </p>
+    <div id="state-konten" style="display:none;max-width:600px;">
+
+      <div class="page-header">
+        <h1 class="page-title">Profil</h1>
+        <p class="page-subtitle">Informasi akun dan preferensi kamu.</p>
+      </div>
+
+      <!-- Banner: belum isi nama samaran -->
+      <div id="banner-samaran" class="banner-samaran" style="display:none;">
+        <span style="font-size:1.25rem;flex-shrink:0;">⚠️</span>
+        <div>
+          <strong style="color:#9a3412;">Nama samaran belum diisi.</strong>
+          <div style="font-size:0.875rem;color:#9a3412;margin-top:2px;">
+            Isi nama samaran agar kamu bisa tampil di leaderboard ZI Challenge.
+          </div>
+        </div>
+      </div>
+
+      <!-- Identitas -->
+      <div class="profil-section">
+        <div class="profil-section-title">Identitas</div>
+        <div class="profil-row">
+          <span class="profil-label">Nama Lengkap</span>
+          <span class="profil-value" id="val-nama">—</span>
+        </div>
+        <div class="profil-row">
+          <span class="profil-label">Satker</span>
+          <span class="profil-value" id="val-satker">—</span>
+        </div>
+        <div class="profil-row" id="row-ruangan" style="display:none;">
+          <span class="profil-label">Ruangan</span>
+          <span class="profil-value" id="val-ruangan">—</span>
+        </div>
+        <div class="profil-row">
+          <span class="profil-label">Role</span>
+          <span class="profil-value" id="val-role">—</span>
+        </div>
+      </div>
+
+      <!-- Nama Samaran -->
+      <div class="profil-section">
+        <div class="profil-section-title">Nama Samaran Leaderboard</div>
+        <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:1rem;">
+          Nama ini yang tampil di leaderboard publik — bukan nama aslimu.
+          Tidak boleh sama dengan pegawai lain.
+        </p>
+        <div id="alert-samaran-error"   class="alert alert-danger mb-4"   style="display:none;"></div>
+        <div id="alert-samaran-success" class="alert alert-success mb-4"  style="display:none;"></div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <input
+            type="text"
+            id="input-nama-samaran"
+            class="form-input"
+            maxlength="30"
+            placeholder="Contoh: Elang Besi, Si Jujur, dll."
+            autocomplete="off"
+          >
+          <div class="form-hint">Maksimal 30 karakter.</div>
+        </div>
+        <button id="btn-simpan-samaran" class="btn btn-primary" onclick="simpanSamaran()">
+          Simpan Nama Samaran
+        </button>
+      </div>
+
+      <!-- Akun Google -->
+      <div class="profil-section">
+        <div class="profil-section-title">Akun Google</div>
+        <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:1rem;">
+          Hubungkan akun Google agar bisa login otomatis tanpa pilih nama dan input NIP.
+        </p>
+        <div id="google-status-wrap"></div>
+        <div id="alert-google-error" class="alert alert-danger mb-4" style="display:none;margin-top:0.75rem;"></div>
+      </div>
+
     </div>
+  </main>
+</div>
 
-    <div id="mode-edit" style="display:none;">
-      <h2 style="font-size:1.125rem;margin-bottom:6px;">Ubah Nama Samaran</h2>
-      <p style="font-size:0.875rem;margin-bottom:1.5rem;color:var(--text-secondary);">
-        Nama samaran kamu saat ini: <strong id="nama-samaran-saat-ini">—</strong>
-      </p>
-    </div>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const NAMA_SATKER = {
+  '1900': 'BPS Provinsi Kepulauan Bangka Belitung',
+  '1901': 'BPS Kabupaten Bangka',
+  '1902': 'BPS Kabupaten Bangka Barat',
+  '1903': 'BPS Kabupaten Bangka Tengah',
+  '1904': 'BPS Kabupaten Bangka Selatan',
+  '1905': 'BPS Kabupaten Belitung',
+  '1906': 'BPS Kabupaten Belitung Timur',
+  '1971': 'BPS Kota Pangkalpinang',
+};
 
-    <div id="alert-error" class="alert alert-danger mb-4" style="display:none;"></div>
-    <div id="alert-success" class="alert alert-success mb-4" style="display:none;"></div>
+let profilData = null;
 
-    <div class="form-group">
-      <label class="form-label">Nama Samaran</label>
-      <input
-        type="text"
-        id="input-nama-samaran"
-        class="form-input"
-        maxlength="30"
-        placeholder="Contoh: Elang Besi, Si Jujur, dll."
-        autocomplete="off"
-      >
-      <div class="form-hint">Maksimal 30 karakter. Tidak boleh sama dengan pegawai lain.</div>
-    </div>
+(async () => {
+  await loadSidebar('profil');
+  await requireLogin();
 
-    <button id="btn-simpan" class="btn btn-primary btn-full" onclick="handleSimpan()">
-      Simpan & Lanjutkan
-    </button>
+  profilData = await getProfil();
+  if (!profilData) { window.location.replace('login.html'); return; }
 
-    <div id="wrap-kembali" style="display:none;margin-top:10px;">
-      <a href="insight.html" class="btn btn-ghost btn-full">Batal</a>
-    </div>
+  renderProfil(profilData);
 
-  </div>
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-konten').style.display  = '';
+})();
 
-  <script src="js/config.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-  (async () => {
-    const session = await getSession();
-    if (!session) { window.location.replace('login.html'); return; }
+function renderProfil(p) {
+  // Identitas
+  document.getElementById('val-nama').textContent   = p.nama || '—';
+  document.getElementById('val-satker').textContent = NAMA_SATKER[p.satker] || p.satker || '—';
+  document.getElementById('val-role').textContent   =
+    p.role === 'admin' ? 'Admin' : 'Pegawai';
 
-    const profil = await getProfil();
-    if (!profil)  { window.location.replace('login.html'); return; }
-
-    if (profil.nama_samaran && profil.nama_samaran.trim()) {
-      document.getElementById('mode-pertama').style.display = 'none';
-      document.getElementById('mode-edit').style.display    = 'block';
-      document.getElementById('wrap-kembali').style.display = 'block';
-      document.getElementById('nama-samaran-saat-ini').textContent = profil.nama_samaran;
-      document.getElementById('input-nama-samaran').value          = profil.nama_samaran;
-      document.getElementById('btn-simpan').textContent            = 'Simpan Perubahan';
-    }
-  })();
-
-  async function handleSimpan() {
-    const nilai = document.getElementById('input-nama-samaran').value.trim();
-    const btn   = document.getElementById('btn-simpan');
-    sembunyiAlert();
-
-    if (!nilai) { tampilError('Nama samaran tidak boleh kosong.'); return; }
-    if (nilai.length < 3) { tampilError('Nama samaran minimal 3 karakter.'); return; }
-
-    btn.disabled    = true;
-    btn.textContent = 'Menyimpan...';
-
-    const { success, error } = await simpanNamaSamaran(nilai);
-
-    if (error) {
-      tampilError(error);
-      btn.disabled    = false;
-      btn.textContent = document.getElementById('wrap-kembali').style.display !== 'none'
-        ? 'Simpan Perubahan' : 'Simpan & Lanjutkan';
-      return;
-    }
-
-    const isEdit = document.getElementById('wrap-kembali').style.display !== 'none';
-    if (isEdit) {
-      tampilSuccess('Nama samaran berhasil diubah!');
-      document.getElementById('nama-samaran-saat-ini').textContent = nilai;
-      btn.disabled    = false;
-      btn.textContent = 'Simpan Perubahan';
-    } else {
-      const tujuan = sessionStorage.getItem('zi_after_nama_samaran') || 'insight.html';
-      sessionStorage.removeItem('zi_after_nama_samaran');
-      window.location.replace(tujuan);
-    }
+  if (p.ruangan) {
+    document.getElementById('val-ruangan').textContent  = p.ruangan;
+    document.getElementById('row-ruangan').style.display = '';
   }
 
-  function tampilError(pesan) {
-    const el = document.getElementById('alert-error');
-    el.textContent = pesan; el.style.display = 'flex';
-  }
-  function tampilSuccess(pesan) {
-    const el = document.getElementById('alert-success');
-    el.textContent = pesan; el.style.display = 'flex';
-  }
-  function sembunyiAlert() {
-    document.getElementById('alert-error').style.display   = 'none';
-    document.getElementById('alert-success').style.display = 'none';
+  // Nama samaran
+  if (p.nama_samaran && p.nama_samaran.trim()) {
+    document.getElementById('input-nama-samaran').value = p.nama_samaran;
+    document.getElementById('btn-simpan-samaran').textContent = 'Simpan Perubahan';
+  } else {
+    document.getElementById('banner-samaran').style.display = 'flex';
+    document.getElementById('btn-simpan-samaran').textContent = 'Simpan & Lanjutkan';
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('input-nama-samaran').addEventListener('keydown', e => {
-      if (e.key === 'Enter') handleSimpan();
-    });
+  // Google
+  renderGoogleStatus(p.google_email);
+}
+
+function renderGoogleStatus(email) {
+  const wrap = document.getElementById('google-status-wrap');
+  if (email) {
+    wrap.innerHTML = `
+      <div class="google-status linked">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span style="flex:1;">Terhubung dengan <strong>${escHtml(email)}</strong></span>
+        <span style="font-size:1rem;">✅</span>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="google-status unlinked" style="margin-bottom:0.75rem;">
+        <span style="color:var(--muted);">○</span>
+        <span>Belum terhubung ke akun Google</span>
+      </div>
+      <button class="btn btn-outline" onclick="hubungkanGoogle()" style="display:flex;align-items:center;gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Hubungkan Akun Google
+      </button>`;
+  }
+}
+
+/* ── Simpan nama samaran ─────────────────────────────────── */
+async function simpanSamaran() {
+  const nilai = document.getElementById('input-nama-samaran').value.trim();
+  const btn   = document.getElementById('btn-simpan-samaran');
+  sembunyiAlertSamaran();
+
+  if (!nilai)        { tampilErrorSamaran('Nama samaran tidak boleh kosong.'); return; }
+  if (nilai.length < 3) { tampilErrorSamaran('Nama samaran minimal 3 karakter.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  const { success, error } = await simpanNamaSamaran(nilai);
+
+  if (error) {
+    tampilErrorSamaran(error);
+    btn.disabled = false;
+    btn.textContent = profilData?.nama_samaran ? 'Simpan Perubahan' : 'Simpan & Lanjutkan';
+    return;
+  }
+
+  // Update lokal
+  if (profilData) profilData.nama_samaran = nilai;
+
+  // Kalau ini pertama kali isi → redirect ke tujuan semula
+  const sudahAdaSebelumnya = btn.textContent !== 'Menyimpan...' &&
+    document.getElementById('banner-samaran').style.display !== 'none';
+
+  document.getElementById('banner-samaran').style.display = 'none';
+  btn.disabled = false;
+  btn.textContent = 'Simpan Perubahan';
+  tampilSuccessSamaran('Nama samaran berhasil disimpan!');
+
+  // Redirect kalau ini pertama kali (dari flow login)
+  const tujuan = sessionStorage.getItem('zi_after_nama_samaran');
+  if (tujuan) {
+    sessionStorage.removeItem('zi_after_nama_samaran');
+    setTimeout(() => window.location.replace(tujuan), 800);
+  }
+}
+
+/* ── Hubungkan Google ────────────────────────────────────── */
+function hubungkanGoogle() {
+  sessionStorage.setItem('zi_google_action', 'link');
+  handleLoginGoogle();
+}
+
+async function handleLoginGoogle() {
+  const { error } = await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/google-callback.html',
+    },
   });
-  </script>
+  if (error) {
+    const el = document.getElementById('alert-google-error');
+    el.textContent = 'Gagal memulai login Google: ' + error.message;
+    el.style.display = 'flex';
+  }
+}
+
+/* ── Alert helpers ───────────────────────────────────────── */
+function tampilErrorSamaran(pesan) {
+  const el = document.getElementById('alert-samaran-error');
+  el.textContent = pesan; el.style.display = 'flex';
+}
+function tampilSuccessSamaran(pesan) {
+  const el = document.getElementById('alert-samaran-success');
+  el.textContent = pesan; el.style.display = 'flex';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+function sembunyiAlertSamaran() {
+  document.getElementById('alert-samaran-error').style.display   = 'none';
+  document.getElementById('alert-samaran-success').style.display = 'none';
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('input-nama-samaran').addEventListener('keydown', e => {
+    if (e.key === 'Enter') simpanSamaran();
+  });
+});
+</script>
 
 </body>
 </html>

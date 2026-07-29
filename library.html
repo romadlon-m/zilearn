@@ -149,7 +149,7 @@ async function muatLibrary() {
 
     semuaKonten = rows
       .filter(r => r.tipe && r.judul)
-      .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+      .sort((a, b) => parseTanggal(b.tanggal) - parseTanggal(a.tanggal));
 
     if (semuaKonten.length === 0) {
       gridEl.innerHTML = `

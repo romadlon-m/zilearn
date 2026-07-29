@@ -5,36 +5,13 @@
 
 (async () => {
   await redirectIfLoggedIn();
-  await muatDaftarPegawai();
+  // muatDaftarPegawai dihandle oleh login.html (searchable dropdown)
   cekSessionError();
 })();
 
-async function muatDaftarPegawai() {
-  const select = document.getElementById('select-nama');
-  const daftar = await getDaftarPegawai();
-
-  if (daftar.length === 0) {
-    select.innerHTML = '<option value="">— Gagal memuat daftar —</option>';
-    return;
-  }
-
-  select.innerHTML = '<option value="">— Pilih nama Anda —</option>';
-  daftar.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value       = p.nip_suffix;
-    opt.textContent = p.nama;
-    select.appendChild(opt);
-  });
-
-  const savedNip = localStorage.getItem('zi_remembered_nip');
-  if (savedNip) {
-    select.value = savedNip;
-    document.getElementById('remember-me').checked = true;
-  }
-}
 
 async function handleLogin() {
-  const nipSuffix = document.getElementById('select-nama').value;
+  const nipSuffix = document.getElementById('selected-pegawai-id').value;
   const nipInput  = document.getElementById('input-nip').value.trim();
   const remember  = document.getElementById('remember-me').checked;
   const btn       = document.getElementById('btn-login');

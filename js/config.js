@@ -12,7 +12,7 @@ const CONFIG = {
   /* ── Google Sheets CSV URL ────────────────────────────── */
   SHEETS_INSIGHT  : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=1014653976&single=true&output=csv',
   SHEETS_LIBRARY  : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=1911028908&single=true&output=csv',
-  SHEETS_SOAL     : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=438869818&single=true&output=csv',
+  SHEETS_SOAL     : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0czDtHVNknK2kS6AnCUhIkALVkvT0dOecxWDkITKkg0ci9Msz0q-6Zp9UM5-eQHfzXu4wA4X8_qJd/pub?gid=438869818&single=true&output=csv',
 
   /* ── Nama Platform ────────────────────────────────────── */
   APP_NAME      : 'ZI Learning',
@@ -81,6 +81,16 @@ function formatTanggal(dateStr) {
     month : 'long',
     year  : 'numeric'
   });
+}
+
+/* ── Helper: parse tanggal DD/MM/YYYY atau YYYY-MM-DD ke timestamp ── */
+function parseTanggal(dateStr) {
+  if (!dateStr) return 0;
+  if (dateStr.includes('/')) {
+    const [dd, mm, yyyy] = dateStr.split('/');
+    return new Date(yyyy, mm - 1, dd).getTime();
+  }
+  return new Date(dateStr).getTime();
 }
 
 /* ── Helper: inisial nama untuk avatar ──────────────────── */

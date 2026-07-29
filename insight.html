@@ -69,7 +69,7 @@
   <main class="main-content">
     <div class="page-header">
       <h1 class="page-title">ZI Insight</h1>
-      <p class="page-subtitle">Materi pembelajaran singkat seputar Zona Integritas, 3–5 menit baca.</p>
+      <p class="page-subtitle">Materi pembelajaran singkat seputar Zona Integritas.</p>
     </div>
 
     <!-- Filter pilar -->
@@ -106,7 +106,7 @@ async function muatInsight() {
 
     semuaArtikel = rows
       .filter(r => r.judul && r.link_docs)
-      .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+      .sort((a, b) => parseTanggal(b.tanggal) - parseTanggal(a.tanggal));
 
     if (semuaArtikel.length === 0) {
       listEl.innerHTML = `

@@ -45,6 +45,12 @@
       font-size: 0.8125rem;
       color: var(--muted);
     }
+    .riwayat-card-link:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+      transition: all 0.15s ease;
+    }
     .riwayat-badge {
       font-size: 0.75rem;
       font-weight: 600;
@@ -109,15 +115,15 @@
 })();
 
 async function muatRiwayat() {
-  const listEl  = document.getElementById('riwayat-list');
-  const profil  = await getProfil();
+  const listEl = document.getElementById('riwayat-list');
+  const profil = await getProfil();
   if (!profil) return;
 
-  const { data: riwayat, error } = await db
-    .from('riwayat_kuis')
-    .select('*')
-    .eq('pegawai_id', profil.id)
-    .order('waktu', { ascending: false });
+  // Fetch riwayat + semua challenge untuk label nama
+  const [{ data: riwayat, error }, { data: chalData }] = await Promise.all([
+    db.from('riwayat_kuis').select('*').eq('pegawai_id', profil.id).order('waktu', { ascending: false }),
+    db.from('challenge').select('id, judul, area_1, area_2, nama_area_1, nama_area_2, tanggal, jumlah_soal'),
+  ]);
 
   if (error) {
     listEl.innerHTML = `
@@ -140,37 +146,79 @@ async function muatRiwayat() {
     return;
   }
 
-  // Kelompokkan per sesi berdasarkan waktu (soal dalam 5 menit = 1 sesi)
-  const sesi = kelompokkanSesi(riwayat);
+  // Map challenge by id untuk lookup cepat (include jumlah_soal untuk filter)
+  const chalMap = {};
+  (chalData || []).forEach(c => { chalMap[String(c.id)] = c; });
 
-  // Hitung statistik
-  const totalSesi     = sesi.length;
-  const totalBenar    = riwayat.filter(r => r.benar).length;
-  const nilaiPerSesi  = sesi.map(s => hitungNilaiSesi(s));
-  const avgNilai      = Math.round(nilaiPerSesi.reduce((a, b) => a + b, 0) / totalSesi);
+  // Kelompokkan per challenge_id
+  const sesiSemua = kelompokkanSesi(riwayat, chalMap);
+
+  // Filter: hanya tampilkan sesi yang sudah lengkap (jumlah baris >= jumlah_soal challenge)
+  const sesi = sesiSemua.filter(s => {
+    const chalId = s[0].challenge_id;
+    if (!chalId) return true; // legacy (tanpa challenge_id) — tampilkan semua
+    const c = chalMap[String(chalId)];
+    const target = parseInt(c?.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
+    return s.length >= target;
+  });
+
+  if (sesi.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Belum ada kuis yang selesai</div>
+        <div class="empty-state-sub">Selesaikan kuis di ZI Challenge untuk melihat riwayat.</div>
+        <a href="challenge.html" class="btn btn-primary" style="margin-top:1rem;">Ke Challenge</a>
+      </div>`;
+    tampilStat(0, 0, 0, 0);
+    return;
+  }
+
+  const totalSesi      = sesi.length;
+  const totalBenar     = riwayat.filter(r => r.benar).length;
+  const nilaiPerSesi   = sesi.map(s => hitungNilaiSesi(s));
+  const avgNilai       = Math.round(nilaiPerSesi.reduce((a, b) => a + b, 0) / totalSesi);
   const nilaiTertinggi = Math.max(...nilaiPerSesi);
 
   tampilStat(totalSesi, avgNilai, totalBenar, nilaiTertinggi);
-  renderRiwayat(sesi, nilaiPerSesi);
+  renderRiwayat(sesi, nilaiPerSesi, chalMap);
 }
 
 function kelompokkanSesi(riwayat) {
-  // Kelompokkan soal yang dikerjakan dalam rentang 30 menit sebagai 1 sesi
-  const INTERVAL_MENIT = 30;
-  const sesi = [];
-  let sesiAktif = [riwayat[0]];
+  // Group by challenge_id — tiap challenge_id unik = 1 sesi
+  // Baris tanpa challenge_id dikelompokkan by rentang waktu 30 menit (legacy)
+  const byChallenge = {};
+  const tanpaChallenge = [];
 
-  for (let i = 1; i < riwayat.length; i++) {
-    const selisih = new Date(sesiAktif[sesiAktif.length - 1].waktu) - new Date(riwayat[i].waktu);
-    if (Math.abs(selisih) <= INTERVAL_MENIT * 60 * 1000) {
-      sesiAktif.push(riwayat[i]);
+  riwayat.forEach(r => {
+    if (r.challenge_id) {
+      const key = String(r.challenge_id);
+      if (!byChallenge[key]) byChallenge[key] = [];
+      byChallenge[key].push(r);
     } else {
-      sesi.push(sesiAktif);
-      sesiAktif = [riwayat[i]];
+      tanpaChallenge.push(r);
     }
+  });
+
+  // Sesi dari challenge_id — urutkan by waktu terbaru
+  const sesiChallenge = Object.values(byChallenge).sort((a, b) =>
+    new Date(b[0].waktu) - new Date(a[0].waktu)
+  );
+
+  // Fallback: kelompokkan baris tanpa challenge_id by rentang 30 menit
+  const INTERVAL_MENIT = 30;
+  const sesiLegacy = [];
+  if (tanpaChallenge.length) {
+    let aktif = [tanpaChallenge[0]];
+    for (let i = 1; i < tanpaChallenge.length; i++) {
+      const selisih = Math.abs(new Date(aktif[aktif.length-1].waktu) - new Date(tanpaChallenge[i].waktu));
+      if (selisih <= INTERVAL_MENIT * 60 * 1000) { aktif.push(tanpaChallenge[i]); }
+      else { sesiLegacy.push(aktif); aktif = [tanpaChallenge[i]]; }
+    }
+    sesiLegacy.push(aktif);
   }
-  sesi.push(sesiAktif);
-  return sesi;
+
+  return [...sesiChallenge, ...sesiLegacy];
 }
 
 function hitungNilaiSesi(sesi) {
@@ -185,7 +233,14 @@ function tampilStat(sesi, avg, benar, tertinggi) {
   document.getElementById('stat-tertinggi').textContent = sesi > 0 ? tertinggi : '—';
 }
 
-function renderRiwayat(sesi, nilaiPerSesi) {
+function labelChallenge(chalId, chalMap) {
+  const c = chalMap && chalMap[String(chalId)];
+  if (!c) return 'Challenge';
+  const area = [c.nama_area_1||c.area_1, c.nama_area_2||c.area_2].filter(Boolean).join(' + ');
+  return c.judul + (area ? ` — ${area}` : '');
+}
+
+function renderRiwayat(sesi, nilaiPerSesi, chalMap) {
   const listEl = document.getElementById('riwayat-list');
   listEl.innerHTML = '';
 
@@ -193,28 +248,23 @@ function renderRiwayat(sesi, nilaiPerSesi) {
   container.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
 
   sesi.forEach((s, i) => {
-    const nilai      = nilaiPerSesi[i];
-    const benar      = s.filter(r => r.benar).length;
-    const total      = s.length;
-    const waktu      = new Date(s[0].waktu);
-    const nomorSesi  = sesi.length - i;
+    const nilai     = nilaiPerSesi[i];
+    const benar     = s.filter(r => r.benar).length;
+    const total     = s.length;
+    const waktu     = new Date(s[0].waktu);
+    const chalId    = s[0].challenge_id;
+    const judul     = chalId ? labelChallenge(chalId, chalMap) : `Sesi #${sesi.length - i}`;
+    const detailUrl = chalId ? `riwayat-detail.html?challenge_id=${chalId}` : null;
 
-    // Warna skor
-    const warna = nilai >= 80 ? 'var(--success)'
-                : nilai >= 60 ? 'var(--warning)'
-                : 'var(--danger)';
-
-    // Label predikat
+    const warna    = nilai >= 80 ? 'var(--success)' : nilai >= 60 ? 'var(--warning)' : 'var(--danger)';
     const predikat = nilai >= 80 ? { label: 'Baik', cls: 'badge-success' }
                    : nilai >= 60 ? { label: 'Cukup', cls: 'badge-warning' }
                    : { label: 'Perlu Belajar', cls: 'badge-danger' };
 
-    const card = document.createElement('div');
-    card.className = 'riwayat-card';
-    card.innerHTML = `
+    const inner = `
       <div class="riwayat-skor" style="background:${warna};">${nilai}</div>
       <div class="riwayat-info">
-        <div class="riwayat-sesi">Sesi #${nomorSesi}</div>
+        <div class="riwayat-sesi">${judul}</div>
         <div class="riwayat-detail">
           ${benar} dari ${total} soal benar &nbsp;·&nbsp;
           ${waktu.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })}
@@ -222,7 +272,21 @@ function renderRiwayat(sesi, nilaiPerSesi) {
         </div>
       </div>
       <span class="riwayat-badge badge ${predikat.cls}">${predikat.label}</span>
+      ${detailUrl ? '<span style="font-size:1rem;color:var(--muted);flex-shrink:0;">›</span>' : ''}
     `;
+
+    let card;
+    if (detailUrl) {
+      card = document.createElement('a');
+      card.href = detailUrl;
+      card.style.cssText = 'text-decoration:none;cursor:pointer;';
+      card.style.display = 'flex';
+    } else {
+      card = document.createElement('div');
+    }
+    card.className = 'riwayat-card';
+    if (detailUrl) card.classList.add('riwayat-card-link');
+    card.innerHTML = inner;
     container.appendChild(card);
   });
 

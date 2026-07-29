@@ -10,142 +10,91 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     .challenge-wrap { max-width: 680px; margin: 0 auto; }
-    .soal-nomor {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .soal-teks {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      line-height: 1.6;
-      margin-bottom: 1.25rem;
-    }
+    .soal-nomor { font-size:0.8125rem; font-weight:600; color:var(--muted); margin-bottom:6px; }
+    .soal-teks { font-size:1rem; font-weight:600; color:var(--text); line-height:1.6; margin-bottom:1.25rem; }
     .pembahasan-box {
-      background: var(--primary-light);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--primary);
-      border-radius: var(--radius);
-      padding: 1rem;
-      margin-top: 1rem;
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      line-height: 1.7;
-      display: none;
+      background:var(--primary-light); border:1px solid var(--border);
+      border-left:4px solid var(--primary); border-radius:var(--radius);
+      padding:1rem; margin-top:1rem; font-size:0.875rem;
+      color:var(--text-secondary); line-height:1.7; display:none;
     }
-    .pembahasan-box.show { display: block; }
-    .hasil-skor {
-      font-size: 4rem;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 8px;
+    .pembahasan-box.show { display:block; }
+    .hasil-skor { font-size:4rem; font-weight:700; line-height:1; margin-bottom:8px; }
+    .hasil-stat { display:flex; justify-content:center; gap:2rem; margin-bottom:2rem; }
+    .hasil-stat-item { text-align:center; }
+    .hasil-stat-val { font-size:1.5rem; font-weight:700; color:var(--text); }
+    .hasil-stat-lbl { font-size:0.75rem; color:var(--muted); }
+    .saran-card { background:var(--accent-light); border:1px solid var(--accent); border-radius:var(--radius-lg); padding:1.25rem 1.5rem; margin-bottom:1.25rem; }
+    .saran-title { font-size:0.9375rem; font-weight:600; color:var(--accent-dark); margin-bottom:8px; }
+    .saran-sub { font-size:0.8125rem; color:var(--text-secondary); margin-bottom:12px; }
+    .saran-links { display:flex; flex-direction:column; gap:6px; }
+    .saran-link { display:flex; align-items:center; gap:8px; font-size:0.875rem; color:var(--accent-dark); text-decoration:none; font-weight:500; }
+    .saran-link:hover { text-decoration:underline; }
+    @keyframes kedip { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .warning-sekali {
+      display:flex; gap:10px; align-items:flex-start;
+      background:#fff7ed; border:2px solid #f97316;
+      border-radius:var(--radius); padding:1rem 1.125rem; margin-bottom:1.25rem;
+      animation:kedip 1.4s ease-in-out infinite;
     }
-    .hasil-stat {
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      margin-bottom: 2rem;
+    .warning-sekali-icon { font-size:1.25rem; flex-shrink:0; line-height:1.5; }
+    .warning-sekali-teks { font-size:0.875rem; color:#9a3412; line-height:1.65; }
+    .warning-sekali-teks strong { color:#7c2d12; }
+    .warning-kuis {
+      display:flex; gap:8px; align-items:flex-start;
+      background:#fefce8; border:1.5px solid #fbbf24;
+      border-radius:var(--radius); padding:0.625rem 0.875rem;
+      margin-bottom:1rem; font-size:0.8125rem; color:#78350f; line-height:1.55;
     }
-    .hasil-stat-item { text-align: center; }
-    .hasil-stat-val { font-size: 1.5rem; font-weight: 700; color: var(--text); }
-    .hasil-stat-lbl { font-size: 0.75rem; color: var(--muted); }
-
-    /* Card saran baca */
-    .saran-card {
-      background: var(--accent-light);
-      border: 1px solid var(--accent);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.25rem;
-    }
-    .saran-title {
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: var(--accent-dark);
-      margin-bottom: 8px;
-    }
-    .saran-sub {
-      font-size: 0.8125rem;
-      color: var(--text-secondary);
-      margin-bottom: 12px;
-    }
-    .saran-links {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .saran-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.875rem;
-      color: var(--accent-dark);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .saran-link:hover { text-decoration: underline; }
-
-    /* Countdown timer */
+    .sudah-skor { font-size:4rem; font-weight:700; line-height:1; margin-bottom:6px; }
     .countdown-badge {
-      display: none;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--muted);
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      padding: 2px 10px;
+      display:none; align-items:center; gap:5px; font-size:0.75rem; font-weight:600;
+      color:var(--muted); background:var(--surface); border:1.5px solid var(--border);
+      border-radius:99px; padding:2px 10px;
     }
-    .countdown-badge svg { opacity: 0.6; }
+    .countdown-badge svg { opacity:0.6; }
   </style>
 </head>
 <body>
-
 <div class="app-layout">
   <div id="sidebar-container"></div>
-
   <main class="main-content">
     <div class="challenge-wrap">
 
-      <!-- State: loading -->
-      <div id="state-loading" class="loading-overlay">
-        <div class="spinner"></div>
-      </div>
+      <div id="state-loading" class="loading-overlay"><div class="spinner"></div></div>
 
-      <!-- State: tidak ada challenge aktif -->
       <div id="state-tidak-ada" style="display:none;">
-        <div class="page-header">
-          <h1 class="page-title">ZI Challenge</h1>
-        </div>
+        <div class="page-header"><h1 class="page-title">ZI Challenge</h1></div>
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">📅</div>
           <h3 style="margin-bottom:8px;">Belum ada challenge tersedia</h3>
-          <p style="font-size:0.9375rem;color:var(--text-secondary);">
-            Challenge mingguan belum dimulai. Pantau pengumuman di grup WhatsApp.
-          </p>
+          <p style="font-size:0.9375rem;color:var(--text-secondary);">Challenge mingguan belum dimulai. Pantau pengumuman di grup WhatsApp.</p>
         </div>
       </div>
 
-      <!-- State: challenge sudah selesai -->
       <div id="state-selesai" style="display:none;">
-        <div class="page-header">
-          <h1 class="page-title">ZI Challenge</h1>
-        </div>
+        <div class="page-header"><h1 class="page-title">ZI Challenge</h1></div>
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">🏁</div>
           <h3 style="margin-bottom:8px;">Challenge minggu ini sudah ditutup</h3>
-          <p style="margin-bottom:1.5rem;font-size:0.9375rem;color:var(--text-secondary);">
-            Leaderboard akan segera tersedia. Sampai jumpa minggu depan!
-          </p>
+          <p style="margin-bottom:1.5rem;font-size:0.9375rem;color:var(--text-secondary);">Leaderboard akan segera tersedia. Sampai jumpa minggu depan!</p>
           <a href="leaderboard.html" class="btn btn-outline">Lihat Leaderboard</a>
         </div>
       </div>
 
-      <!-- State: butuh login -->
+      <div id="state-sudah" style="display:none;">
+        <div class="page-header"><h1 class="page-title">ZI Challenge</h1></div>
+        <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div class="sudah-skor" id="sudah-skor" style="color:var(--primary);">—</div>
+          <div style="font-size:1rem;color:var(--text-secondary);margin-bottom:0.5rem;">dari 100</div>
+          <p id="sudah-pesan" style="font-size:0.9375rem;color:var(--text-secondary);margin-bottom:1.5rem;max-width:420px;margin-left:auto;margin-right:auto;"></p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <a href="riwayat.html" class="btn btn-primary">Lihat Riwayat</a>
+            <a href="leaderboard.html" class="btn btn-outline">Lihat Leaderboard</a>
+          </div>
+        </div>
+      </div>
+
       <div id="state-login" style="display:none;">
         <div class="page-header">
           <h1 class="page-title">ZI Challenge</h1>
@@ -154,50 +103,52 @@
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">🔐</div>
           <h3 style="margin-bottom:8px;">Masuk untuk mulai kuis</h3>
-          <p style="margin-bottom:1.5rem;font-size:0.9375rem;">
-            ZI Challenge memerlukan akun untuk menyimpan progres dan nilai kamu.
-          </p>
+          <p style="margin-bottom:1.5rem;font-size:0.9375rem;">ZI Challenge memerlukan akun untuk menyimpan progres dan nilai kamu.</p>
           <a href="login.html?redirect=challenge.html" class="btn btn-primary">Masuk Sekarang</a>
         </div>
       </div>
 
-      <!-- State: pilih kuis -->
       <div id="state-pilih" style="display:none;">
         <div class="page-header">
           <h1 class="page-title">ZI Challenge</h1>
           <p class="page-subtitle" id="challenge-subtitle">Uji pemahaman dengan kuis berbasis skenario nyata.</p>
         </div>
-
-        <!-- Card saran baca -->
         <div class="saran-card" id="saran-baca" style="display:none;">
           <div class="saran-title">📖 Sudah baca materi minggu ini?</div>
-          <div class="saran-sub">
-            Soal kuis diambil dari materi berikut. Membaca dulu akan membantu kamu menjawab lebih baik.
-          </div>
+          <div class="saran-sub">Soal kuis diambil dari materi berikut. Membaca dulu akan membantu kamu menjawab lebih baik.</div>
           <div class="saran-links" id="saran-links"></div>
         </div>
-
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;" id="card-mulai">
           <div style="font-size:2.5rem;margin-bottom:1rem;">🎯</div>
           <h3 style="margin-bottom:8px;">Siap menghadapi tantangan?</h3>
-          <p style="margin-bottom:4px;font-size:0.9375rem;">
-            Kuis terdiri dari <strong id="jumlah-soal-info">—</strong> soal.
-          </p>
-          <p style="margin-bottom:1.5rem;font-size:0.875rem;color:var(--muted);">
-            Jawab dengan jujur — pembahasan muncul setelah setiap soal.
-          </p>
+          <p style="margin-bottom:4px;font-size:0.9375rem;">Kuis terdiri dari <strong id="jumlah-soal-info">—</strong> soal.</p>
+          <p style="margin-bottom:1.5rem;font-size:0.875rem;color:var(--muted);">Jawab dengan jujur — pembahasan muncul setelah setiap soal.</p>
+          <div class="warning-sekali" style="text-align:left;margin-bottom:1.25rem;">
+            <div class="warning-sekali-icon">⚠️</div>
+            <div class="warning-sekali-teks">
+              <strong>Kuis ini hanya bisa dikerjakan satu kali.</strong> Pastikan kamu siap dan tidak akan terganggu sebelum menekan tombol Mulai Kuis.
+            </div>
+          </div>
           <button class="btn btn-primary btn-lg" onclick="mulaiKuis()">Mulai Kuis</button>
         </div>
       </div>
 
-      <!-- State: mengerjakan kuis -->
       <div id="state-kuis" style="display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
           <h2 style="font-size:1rem;margin:0;">ZI Challenge</h2>
           <span id="kuis-progress-label" style="font-size:0.875rem;color:var(--muted);"></span>
         </div>
-        <div class="quiz-progress">
-          <div class="quiz-progress-bar" id="progress-bar" style="width:0%"></div>
+        <div class="quiz-progress"><div class="quiz-progress-bar" id="progress-bar" style="width:0%"></div></div>
+        <div class="warning-kuis">
+          <span>⚠️</span>
+          <span><strong>Setiap jawaban yang kamu klik langsung terkunci.</strong> Jika belum yakin, jangan klik dulu.</span>
+        </div>
+        <div id="koneksi-error" style="display:none;align-items:center;gap:10px;
+          background:#fef2f2;border:1.5px solid #fca5a5;border-radius:var(--radius);
+          padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.875rem;color:#991b1b;">
+          <span>📡</span>
+          <span style="flex:1;">Koneksi bermasalah. Periksa internet kamu dan coba lagi.</span>
+          <button id="btn-retry" class="btn btn-outline" style="font-size:0.8125rem;padding:4px 14px;color:#991b1b;border-color:#fca5a5;flex-shrink:0;">Coba Lagi</button>
         </div>
         <div class="card" style="margin-bottom:1rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
@@ -216,41 +167,35 @@
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;">
-          <button id="btn-lanjut" class="btn btn-primary" style="display:none;" onclick="soalBerikutnya()">
-            Soal Berikutnya →
-          </button>
-          <button id="btn-selesai" class="btn btn-accent" style="display:none;" onclick="selesaikanKuis()">
-            Lihat Hasil ✓
-          </button>
+          <button id="btn-lanjut" class="btn btn-primary" style="display:none;" onclick="soalBerikutnya()">Soal Berikutnya →</button>
+          <button id="btn-selesai" class="btn btn-accent" style="display:none;" onclick="selesaikanKuis()">Lihat Hasil ✓</button>
         </div>
       </div>
 
-      <!-- State: hasil -->
       <div id="state-hasil" style="display:none;">
         <div class="card" style="text-align:center;padding:2rem 1rem;">
           <div class="hasil-skor" id="hasil-skor" style="color:var(--primary);">—</div>
           <div style="font-size:1rem;color:var(--text-secondary);margin-bottom:1.5rem;">dari 100</div>
           <div class="hasil-stat">
-            <div class="hasil-stat-item">
-              <div class="hasil-stat-val" id="hasil-benar">—</div>
-              <div class="hasil-stat-lbl">Jawaban Benar</div>
-            </div>
-            <div class="hasil-stat-item">
-              <div class="hasil-stat-val" id="hasil-salah">—</div>
-              <div class="hasil-stat-lbl">Jawaban Salah</div>
-            </div>
-            <div class="hasil-stat-item">
-              <div class="hasil-stat-val" id="hasil-total">—</div>
-              <div class="hasil-stat-lbl">Total Soal</div>
-            </div>
+            <div class="hasil-stat-item"><div class="hasil-stat-val" id="hasil-benar">—</div><div class="hasil-stat-lbl">Jawaban Benar</div></div>
+            <div class="hasil-stat-item"><div class="hasil-stat-val" id="hasil-salah">—</div><div class="hasil-stat-lbl">Jawaban Salah</div></div>
+            <div class="hasil-stat-item"><div class="hasil-stat-val" id="hasil-total">—</div><div class="hasil-stat-lbl">Total Soal</div></div>
           </div>
           <p id="hasil-pesan" style="color:var(--text-secondary);margin-bottom:1.5rem;"></p>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="resetKuis()">Kuis Lagi</button>
-            <a href="riwayat.html" class="btn btn-outline">Lihat Riwayat</a>
+            <a href="riwayat.html" class="btn btn-primary">Lihat Riwayat</a>
+            <a href="leaderboard.html" class="btn btn-outline">Lihat Leaderboard</a>
           </div>
         </div>
         <h3 style="margin:1.5rem 0 1rem;font-size:1rem;">Review Jawaban</h3>
+        <!-- Link artikel — muncul kalau skor < 100 -->
+        <div id="hasil-saran-baca" style="display:none;margin-bottom:1rem;">
+          <div class="saran-card">
+            <div class="saran-title">📖 Mau belajar lebih dalam?</div>
+            <div class="saran-sub">Baca materi terkait challenge ini untuk memperkuat pemahamanmu.</div>
+            <div class="saran-links" id="hasil-saran-links"></div>
+          </div>
+        </div>
         <div id="review-container" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
 
@@ -260,16 +205,18 @@
 
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/sidebar.js"></script>
 <script>
-const DRAFT_KEY  = 'zi_challenge_draft';
-let soalList     = [];
-let soalAktif    = 0;
-let jawaban      = [];
-let sesiPegawai  = null;
+const DRAFT_KEY     = 'zi_challenge_draft';
+let soalList        = [];
+let soalAktif       = 0;
+let jawaban         = [];
+let sesiPegawai     = null;
 let challengeAktif  = null;
 let soalMulai       = 0;
 let countdownTimer  = null;
+let sedangLanjut    = false;
 const BACA_DETIK    = 5;
 
 (async () => {
@@ -280,62 +227,138 @@ const BACA_DETIK    = 5;
   await muatChallenge();
 })();
 
-/* ── Muat challenge aktif dari Supabase ─────────────────── */
+/* ── Muat challenge aktif ────────────────────────────────── */
 async function muatChallenge() {
   tampilState('loading');
   try {
-    // Query challenge aktif dari Supabase
+    // Auto-close challenge yang sudah lewat window
+    await autoTutupChallengeExpired();
+
     const { data: chalData, error: errC } = await db
-      .from('challenge')
-      .select('*')
-      .eq('status', 'aktif')
-      .limit(1);
+      .from('challenge').select('*').or('status.eq.Aktif,status.eq.aktif').limit(1);
     if (errC) throw errC;
     challengeAktif = chalData?.[0] || null;
 
-    // Fetch soal (masih dari sheet)
-    const resS  = await fetch(CONFIG.SHEETS_SOAL);
-    const textS = await resS.text();
+    const resS      = await fetch(CONFIG.SHEETS_SOAL);
+    const textS     = await resS.text();
     const semuaSoal = parseCSV(textS);
+    let soalPool    = [];
 
-    let soalPool = [];
-
-    // Cek status challenge
     if (!challengeAktif) {
-      // Cek apakah ada yang selesai (untuk pesan yang lebih kontekstual)
+      // Cek apakah ada yang sudah selesai
       const { data: chalSelesai } = await db
-        .from('challenge').select('id').eq('status', 'Selesai').limit(1);
+        .from('challenge').select('id')
+        .or('status.eq.Selesai,status.eq.selesai')
+        .limit(1);
       tampilState(chalSelesai?.length ? 'selesai' : 'tidak-ada');
       return;
     }
 
-    // Ada challenge aktif — ambil soal berdasarkan area
-    const areas = [challengeAktif.area_1, challengeAktif.area_2].filter(Boolean);
-    const jumlahSoal  = parseInt(challengeAktif.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
+    // ── Cek window waktu (Opsi B) ────────────────────────────
+    const windowStatus = cekWindowChallenge(challengeAktif);
+    if (windowStatus === 'belum') {
+      tampilBelumMulai(challengeAktif);
+      return;
+    }
+    if (windowStatus === 'lewat') {
+      tampilState('selesai');
+      return;
+    }
+    // windowStatus === 'buka' → lanjut normal
+
+    const jumlahSoal = parseInt(challengeAktif.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
+
+    // ── Cek riwayat Supabase (satu kali fetch, handle semua kasus) ──
+    if (sesiPegawai) {
+      const { data: sudahAda } = await db
+        .from('riwayat_kuis')
+        .select('soal_id, jawaban, benar, nilai')
+        .eq('pegawai_id', sesiPegawai.id)
+        .eq('challenge_id', String(challengeAktif.id));
+
+      if (sudahAda && sudahAda.length > 0) {
+        if (sudahAda.length >= jumlahSoal) {
+          // Selesai semua
+          const totalNilai = Math.min(100, Math.round(
+            sudahAda.reduce((a, r) => a + (Number(r.nilai) || 0), 0)
+          ));
+          document.getElementById('sudah-skor').textContent = totalNilai;
+          document.getElementById('sudah-skor').style.color =
+            totalNilai >= 80 ? 'var(--success)' : totalNilai >= 60 ? 'var(--warning)' : 'var(--danger)';
+          document.getElementById('sudah-pesan').textContent = pesanMotivasi(totalNilai);
+          tampilState('sudah');
+          return;
+        }
+
+        // Sebagian — lanjut dari soal tersisa
+        sedangLanjut = true;
+        const dijawabIds = new Set(sudahAda.map(r => String(r.soal_id)));
+
+        const areas2       = [challengeAktif.area_1, challengeAktif.area_2].filter(Boolean);
+        const soalPerArea2 = Math.floor(jumlahSoal / areas2.length);
+        let poolLengkap    = [];
+        areas2.forEach(area => {
+          const pool    = semuaSoal.filter(s => s.pilar === area && s.soal && s.opsi_a && s.opsi_b && s.jawaban);
+          const insight = pool.filter(s => s.tipe_soal === 'insight').slice(0, 1);
+          const reguler = acak(pool.filter(s => s.tipe_soal !== 'insight')).slice(0, soalPerArea2 - insight.length);
+          poolLengkap   = poolLengkap.concat(insight, reguler);
+        });
+
+        // Reconstruct jawaban array dari Supabase + teks soal dari sheet
+        jawaban = [];
+        sudahAda.forEach(r => {
+          const soal = poolLengkap.find(s => String(s.id) === String(r.soal_id));
+          if (soal) {
+            jawaban.push({
+              soal_id      : r.soal_id,
+              jawaban      : r.jawaban,
+              benar        : r.benar,
+              nilai        : Number(r.nilai) || 0,
+              soal         : soal.soal,
+              jawaban_benar: soal.jawaban,
+              opsi_dipilih : soal[`opsi_${r.jawaban}`],
+              opsi_benar   : soal[`opsi_${soal.jawaban}`],
+              pembahasan   : soal.pembahasan,
+            });
+          }
+        });
+
+        soalList  = acak(poolLengkap.filter(s => !dijawabIds.has(String(s.id))));
+        soalAktif = 0;
+
+        if (soalList.length === 0) { tampilState('sudah'); return; }
+
+        document.getElementById('jumlah-soal-info').textContent = jumlahSoal;
+        if (challengeAktif) await tampilSaranBaca(challengeAktif);
+
+        document.querySelector('#card-mulai h3').textContent = 'Lanjutkan kuis kamu';
+        document.querySelector('#card-mulai p').innerHTML =
+          `Kamu sudah menjawab <strong>${sudahAda.length} dari ${jumlahSoal}</strong> soal. Sisa <strong>${soalList.length} soal</strong> menunggu.`;
+        document.querySelector('#card-mulai .btn-primary').textContent = 'Lanjutkan Kuis';
+        document.querySelector('#card-mulai .warning-sekali').style.display = 'none';
+
+        tampilState('pilih');
+        return;
+      }
+    }
+
+    // ── Fresh start ──────────────────────────────────────────
+    const areas       = [challengeAktif.area_1, challengeAktif.area_2].filter(Boolean);
     const soalPerArea = Math.floor(jumlahSoal / areas.length);
 
     areas.forEach(area => {
-      const pool = semuaSoal.filter(s => s.pilar === area && s.soal && s.opsi_a && s.opsi_b && s.jawaban);
+      const pool    = semuaSoal.filter(s => s.pilar === area && s.soal && s.opsi_a && s.opsi_b && s.jawaban);
       const insight = pool.filter(s => s.tipe_soal === 'insight').slice(0, 1);
       const reguler = acak(pool.filter(s => s.tipe_soal !== 'insight')).slice(0, soalPerArea - insight.length);
       soalPool = soalPool.concat(insight, reguler);
     });
 
-    if (soalPool.length === 0) {
-      tampilState('tidak-ada');
-      return;
-    }
+    if (soalPool.length === 0) { tampilState('tidak-ada'); return; }
 
     soalList = acak(soalPool);
     document.getElementById('jumlah-soal-info').textContent = soalList.length;
-
-    // Tampilkan card saran baca jika ada challenge aktif
     if (challengeAktif) await tampilSaranBaca(challengeAktif);
-
     tampilState('pilih');
-
-    // Cek draft setelah state pilih ditampilkan
-    // supaya lanjutDraft() bisa override state ke kuis
     cekDraft();
 
   } catch (e) {
@@ -344,40 +367,75 @@ async function muatChallenge() {
   }
 }
 
-/* ── Tampilkan saran baca artikel Insight ────────────────── */
+/* ── Window waktu challenge ──────────────────────────────── */
+function cekWindowChallenge(c) {
+  if (!c.tanggal || !c.jam_buka || !c.jam_tutup) return 'buka'; // tidak ada window → buka
+
+  const sekarang = new Date();
+
+  // Supabase simpan date sebagai YYYY-MM-DD, time sebagai HH:MM:SS
+  // Admin input WIB — bangun Date object sebagai WIB (UTC+7)
+  const bukaTgl  = c.tanggal; // YYYY-MM-DD
+  const bukaJam  = (c.jam_buka  || '08:00:00').slice(0, 5); // HH:MM
+  const tutupJam = (c.jam_tutup || '23:59:00').slice(0, 5); // HH:MM
+
+  // Parse sebagai WIB: tambah offset +07:00
+  const jamBuka  = new Date(`${bukaTgl}T${bukaJam}:00+07:00`);
+  const jamTutup = new Date(`${bukaTgl}T${tutupJam}:00+07:00`);
+
+  if (sekarang < jamBuka)  return 'belum';
+  if (sekarang > jamTutup) return 'lewat';
+  return 'buka';
+}
+
+function tampilBelumMulai(c) {
+  const bukaJam = (c.jam_buka || '08:00:00').slice(0, 5);
+  const [hh, mm] = bukaJam.split(':');
+  const jamLabel = `${hh}.${mm} WIB`;
+
+  const tglLabel = c.tanggal
+    ? new Date(c.tanggal + 'T00:00:00').toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+    : '';
+
+  const el = document.querySelector('#state-tidak-ada .card');
+  if (el) {
+    el.innerHTML = `
+      <div style="font-size:2.5rem;margin-bottom:1rem;">⏳</div>
+      <h3 style="margin-bottom:8px;">Challenge belum dibuka</h3>
+      <p style="font-size:0.9375rem;color:var(--text-secondary);margin-bottom:0;">
+        Challenge minggu ini dimulai pada<br>
+        <strong>${tglLabel}, pukul ${jamLabel}</strong>.<br><br>
+        Pantau pengumuman di grup WhatsApp.
+      </p>
+    `;
+  }
+  tampilState('tidak-ada');
+}
+
+/* ── Saran baca ──────────────────────────────────────────── */
 async function tampilSaranBaca(challenge) {
   try {
     const res     = await fetch(CONFIG.SHEETS_INSIGHT);
     const text    = await res.text();
     const artikel = parseCSV(text);
-
     let linkArtikel = [];
 
-    // Prioritas: insight_ref manual
     if (challenge.insight_ref && challenge.insight_ref.trim()) {
-      const ids = challenge.insight_ref.split(',').map(s => s.trim());
-      ids.forEach(id => {
+      challenge.insight_ref.split(',').map(s => s.trim()).forEach(id => {
         const a = artikel.find(r => String(r.id) === id);
         if (a) linkArtikel.push(a);
       });
     }
-
-    // Fallback: filter berdasarkan pilar
     if (linkArtikel.length === 0) {
-      const areas = [challenge.area_1, challenge.area_2].filter(Boolean);
-      areas.forEach(area => {
-        const match = artikel
-          .filter(r => r.pilar === area && r.judul && r.link_docs)
+      [challenge.area_1, challenge.area_2].filter(Boolean).forEach(area => {
+        const match = artikel.filter(r => r.pilar === area && r.judul && r.link_docs)
           .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))[0];
         if (match) linkArtikel.push(match);
       });
     }
-
     if (linkArtikel.length === 0) return;
 
-    const saranCard  = document.getElementById('saran-baca');
     const saranLinks = document.getElementById('saran-links');
-
     saranLinks.innerHTML = '';
     linkArtikel.forEach(a => {
       const link = document.createElement('a');
@@ -393,69 +451,28 @@ async function tampilSaranBaca(challenge) {
       `;
       saranLinks.appendChild(link);
     });
-
-    saranCard.style.display = 'block';
-
-  } catch (e) {
-    console.error('Gagal muat saran baca:', e);
-  }
+    document.getElementById('saran-baca').style.display = 'block';
+  } catch (e) { console.error('Gagal muat saran baca:', e); }
 }
 
-/* ── Draft management ────────────────────────────────────── */
-function simpanDraft() {
-  const draft = { soalList, soalAktif, jawaban, waktu: Date.now() };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-}
+/* ── Draft (no-op — Supabase adalah sumber data) ─────────── */
+function simpanDraft() {}
+function cekDraft()   { localStorage.removeItem(DRAFT_KEY); }
+function hapusDraft() { localStorage.removeItem(DRAFT_KEY); }
 
-function cekDraft() {
-  const raw = localStorage.getItem(DRAFT_KEY);
-  if (!raw) return;
-  try {
-    const draft     = JSON.parse(raw);
-    const usiaMenit = (Date.now() - draft.waktu) / 1000 / 60;
-    if (usiaMenit > 60 * 24) { localStorage.removeItem(DRAFT_KEY); return; } // expired 24 jam
-    // Auto-lanjut draft tanpa konfirmasi
-    lanjutDraft();
-  } catch { localStorage.removeItem(DRAFT_KEY); }
-}
-
-function lanjutDraft() {
-  const raw = localStorage.getItem(DRAFT_KEY);
-  if (!raw) return;
-  const draft = JSON.parse(raw);
-  soalList  = draft.soalList;
-  jawaban   = draft.jawaban;
-  // Gunakan panjang jawaban sebagai index soal berikutnya
-  // supaya tidak mengulang soal yang sudah dijawab
-  soalAktif = draft.jawaban.length;
-  tampilState('kuis');
-  renderSoal();
-}
-
-function hapusDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-}
-
-/* ── Mulai kuis baru ─────────────────────────────────────── */
+/* ── Mulai / Lanjut kuis ─────────────────────────────────── */
 function mulaiKuis() {
   soalAktif = 0;
-  jawaban   = [];
-  soalList  = acak(soalList);
+  if (!sedangLanjut) {
+    jawaban  = [];
+    soalList = acak(soalList);
+  }
   localStorage.removeItem(DRAFT_KEY);
   tampilState('kuis');
   renderSoal();
 }
 
-function resetKuis() {
-  soalAktif = 0;
-  jawaban   = [];
-  soalList  = acak(soalList);
-  localStorage.removeItem(DRAFT_KEY);
-  tampilState('pilih');
-  cekDraft();
-}
-
-/* ── Render soal aktif ───────────────────────────────────── */
+/* ── Render soal ─────────────────────────────────────────── */
 function renderSoal() {
   const soal   = soalList[soalAktif];
   const total  = soalList.length;
@@ -469,10 +486,10 @@ function renderSoal() {
   document.getElementById('pembahasan-box').classList.remove('show');
   document.getElementById('btn-lanjut').style.display        = 'none';
   document.getElementById('btn-selesai').style.display       = 'none';
+  document.getElementById('koneksi-error').style.display     = 'none';
 
   const opsiContainer = document.getElementById('opsi-container');
   opsiContainer.innerHTML = '';
-
   const opsiMap    = { a: soal.opsi_a, b: soal.opsi_b, c: soal.opsi_c, d: soal.opsi_d };
   const opsiTampil = Object.entries(opsiMap).filter(([, v]) => v && v.trim());
   const opsiAcak   = soal.format_soal === 'BenarSalah' ? opsiTampil : acak(opsiTampil);
@@ -481,25 +498,21 @@ function renderSoal() {
     const btn = document.createElement('button');
     btn.className   = 'quiz-option';
     btn.dataset.key = key;
-    btn.innerHTML   = `
-      <span class="quiz-option-key">${idx + 1}</span>
-      <span>${teks}</span>
-    `;
+    btn.innerHTML   = `<span class="quiz-option-key">${idx + 1}</span><span>${teks}</span>`;
     btn.onclick = () => pilihJawaban(key, btn);
     opsiContainer.appendChild(btn);
   });
 
-  // Countdown — disable opsi selama BACA_DETIK detik
   clearInterval(countdownTimer);
   soalMulai = Date.now();
   const semuaOpsi = opsiContainer.querySelectorAll('.quiz-option');
   semuaOpsi.forEach(b => { b.disabled = true; b.style.opacity = '0.55'; b.style.cursor = 'default'; });
 
-  const badgeEl  = document.getElementById('countdown-badge');
-  const angkaEl  = document.getElementById('countdown-angka');
-  let sisaDetik  = BACA_DETIK;
-  angkaEl.textContent = sisaDetik;
-  badgeEl.style.display = 'inline-flex';
+  const badgeEl = document.getElementById('countdown-badge');
+  const angkaEl = document.getElementById('countdown-angka');
+  let sisaDetik = BACA_DETIK;
+  angkaEl.textContent    = sisaDetik;
+  badgeEl.style.display  = 'inline-flex';
 
   countdownTimer = setInterval(() => {
     sisaDetik--;
@@ -507,13 +520,9 @@ function renderSoal() {
       clearInterval(countdownTimer);
       badgeEl.style.display = 'none';
       opsiContainer.querySelectorAll('.quiz-option').forEach(b => {
-        b.disabled = false;
-        b.style.opacity = '';
-        b.style.cursor = '';
+        b.disabled = false; b.style.opacity = ''; b.style.cursor = '';
       });
-    } else {
-      angkaEl.textContent = sisaDetik;
-    }
+    } else { angkaEl.textContent = sisaDetik; }
   }, 1000);
 }
 
@@ -523,34 +532,57 @@ function pilihJawaban(key, btnEl) {
   document.getElementById('countdown-badge').style.display = 'none';
   const soal  = soalList[soalAktif];
   const benar = key === soal.jawaban;
+  // FIX: pakai jumlah_soal konstan sebagai pembagi, bukan panjang array yang berubah
+  const totalSoal = parseInt(challengeAktif?.jumlah_soal) || CONFIG.QUIZ_JUMLAH_SOAL;
+  const nilai     = benar ? Math.round(100 / totalSoal) : 0;
 
   document.querySelectorAll('.quiz-option').forEach(b => {
-    b.onclick = null;
-    b.style.cursor = 'default';
+    b.onclick = null; b.style.cursor = 'default';
     if (b.dataset.key === soal.jawaban) b.classList.add('correct');
     if (b === btnEl && !benar)          b.classList.add('wrong');
     if (b === btnEl && benar)           b.classList.add('selected');
   });
 
-  jawaban.push({
+  simpanDanLanjut({
     soal_id      : soal.id,
     jawaban      : key,
     benar,
-    nilai        : benar ? Math.round(100 / soalList.length) : 0,
+    nilai,
     soal         : soal.soal,
     jawaban_benar: soal.jawaban,
+    opsi_dipilih : soal[`opsi_${key}`],
     opsi_benar   : soal[`opsi_${soal.jawaban}`],
     pembahasan   : soal.pembahasan,
   });
+}
 
-  document.getElementById('pembahasan-teks').textContent = soal.pembahasan || 'Tidak ada pembahasan.';
+async function simpanDanLanjut(jawabanData) {
+  const errorEl = document.getElementById('koneksi-error');
+  errorEl.style.display = 'none';
+
+  if (sesiPegawai && challengeAktif) {
+    const { error } = await db.from('riwayat_kuis').insert({
+      pegawai_id   : sesiPegawai.id,
+      soal_id      : jawabanData.soal_id,
+      jawaban      : jawabanData.jawaban,
+      benar        : jawabanData.benar,
+      nilai        : jawabanData.nilai,
+      challenge_id : String(challengeAktif.id),
+    });
+
+    if (error) {
+      console.error('Gagal simpan jawaban:', error.message);
+      errorEl.style.display = 'flex';
+      document.getElementById('btn-retry').onclick = () => simpanDanLanjut(jawabanData);
+      return;
+    }
+  }
+
+  jawaban.push(jawabanData);
+  document.getElementById('pembahasan-teks').textContent = jawabanData.pembahasan || 'Tidak ada pembahasan.';
   document.getElementById('pembahasan-box').classList.add('show');
-
   const isLast = soalAktif === soalList.length - 1;
   document.getElementById(isLast ? 'btn-selesai' : 'btn-lanjut').style.display = 'inline-flex';
-
-  // Auto-save draft setelah tiap jawaban
-  simpanDraft();
 }
 
 /* ── Soal berikutnya ─────────────────────────────────────── */
@@ -563,24 +595,13 @@ function soalBerikutnya() {
 /* ── Selesaikan kuis ─────────────────────────────────────── */
 async function selesaikanKuis() {
   document.getElementById('btn-selesai').disabled    = true;
-  document.getElementById('btn-selesai').textContent = 'Menyimpan...';
+  document.getElementById('btn-selesai').textContent = 'Memproses...';
 
   const totalBenar = jawaban.filter(j => j.benar).length;
   const totalSalah = jawaban.length - totalBenar;
-  const skor       = Math.round((totalBenar / jawaban.length) * 100);
-
-  if (sesiPegawai) {
-    const rows = jawaban.map(j => ({
-      pegawai_id   : sesiPegawai.id,
-      soal_id      : j.soal_id,
-      jawaban      : j.jawaban,
-      benar        : j.benar,
-      nilai        : j.nilai,
-      challenge_id : challengeAktif ? String(challengeAktif.id) : null,
-    }));
-    const { error } = await db.from('riwayat_kuis').insert(rows);
-    if (error) console.error('Gagal simpan riwayat:', error.message);
-  }
+  const skor       = Math.min(100, Math.round(
+    jawaban.reduce((a, j) => a + (j.nilai || 0), 0)
+  ));
 
   localStorage.removeItem(DRAFT_KEY);
   tampilHasil(skor, totalBenar, totalSalah);
@@ -595,12 +616,7 @@ function tampilHasil(skor, benar, salah) {
 
   const skorEl = document.getElementById('hasil-skor');
   skorEl.style.color = skor >= 80 ? 'var(--success)' : skor >= 60 ? 'var(--warning)' : 'var(--danger)';
-
-  document.getElementById('hasil-pesan').textContent = skor >= 80
-    ? '🎉 Luar biasa! Pemahaman ZI kamu sangat baik.'
-    : skor >= 60
-    ? '👍 Cukup baik! Terus tingkatkan pemahamanmu.'
-    : '💪 Jangan menyerah! Pelajari lagi materinya dan coba kuis baru.';
+  document.getElementById('hasil-pesan').textContent = pesanMotivasi(skor);
 
   const reviewEl = document.getElementById('review-container');
   reviewEl.innerHTML = '';
@@ -612,19 +628,10 @@ function tampilHasil(skor, benar, salah) {
       <div style="display:flex;align-items:flex-start;gap:10px;">
         <span style="font-size:1.25rem;">${j.benar ? '✓' : '✗'}</span>
         <div style="flex:1;">
-          <div style="font-size:0.875rem;font-weight:600;color:var(--text);margin-bottom:6px;">
-            ${i + 1}. ${j.soal}
-          </div>
-          ${!j.benar ? `<div style="font-size:0.8125rem;color:var(--danger);margin-bottom:4px;">
-            Jawaban kamu: opsi ${j.jawaban.toUpperCase()}
-          </div>` : ''}
-          <div style="font-size:0.8125rem;color:var(--success);margin-bottom:6px;">
-            Jawaban benar: ${j.opsi_benar}
-          </div>
-          ${j.pembahasan ? `<div style="font-size:0.8125rem;color:var(--text-secondary);
-            background:var(--surface);padding:8px 10px;border-radius:6px;">
-            ${j.pembahasan}
-          </div>` : ''}
+          <div style="font-size:0.875rem;font-weight:600;color:var(--text);margin-bottom:6px;">${i+1}. ${j.soal}</div>
+          ${!j.benar ? `<div style="font-size:0.8125rem;color:var(--danger);margin-bottom:4px;">Jawaban kamu: ${j.opsi_dipilih || 'Opsi ' + j.jawaban.toUpperCase()}</div>` : ''}
+          <div style="font-size:0.8125rem;color:var(--success);margin-bottom:6px;">Jawaban benar: ${j.opsi_benar}</div>
+          ${j.pembahasan ? `<div style="font-size:0.8125rem;color:var(--text-secondary);background:var(--surface);padding:8px 10px;border-radius:6px;">${j.pembahasan}</div>` : ''}
         </div>
       </div>`;
     reviewEl.appendChild(div);
@@ -632,21 +639,68 @@ function tampilHasil(skor, benar, salah) {
 
   tampilState('hasil');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Tampilkan link artikel kalau skor < 100
+  if (skor < 100 && challengeAktif) tampilSaranBacaHasil(challengeAktif);
+}
+
+async function tampilSaranBacaHasil(challenge) {
+  try {
+    const res     = await fetch(CONFIG.SHEETS_INSIGHT);
+    const text    = await res.text();
+    const artikel = parseCSV(text);
+    let linkArtikel = [];
+
+    if (challenge.insight_ref && challenge.insight_ref.trim()) {
+      challenge.insight_ref.split(',').map(s => s.trim()).forEach(id => {
+        const a = artikel.find(r => String(r.id) === id);
+        if (a) linkArtikel.push(a);
+      });
+    }
+    if (linkArtikel.length === 0) {
+      [challenge.area_1, challenge.area_2].filter(Boolean).forEach(area => {
+        const match = artikel.filter(r => r.pilar === area && r.judul && r.link_docs)
+          .sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal))[0];
+        if (match) linkArtikel.push(match);
+      });
+    }
+    if (linkArtikel.length === 0) return;
+
+    const linksEl = document.getElementById('hasil-saran-links');
+    linksEl.innerHTML = '';
+    linkArtikel.forEach(a => {
+      const link = document.createElement('a');
+      link.className = 'saran-link';
+      link.href      = `insight-detail.html?id=${a.id}`;
+      link.target    = '_blank';
+      link.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        ${a.judul} <span style="color:var(--muted);font-weight:400;">(${namaPilar(a.pilar)})</span>
+      `;
+      linksEl.appendChild(link);
+    });
+    document.getElementById('hasil-saran-baca').style.display = 'block';
+  } catch (e) { console.error('Gagal muat saran baca hasil:', e); }
+}
+
+/* ── Pesan motivasi ──────────────────────────────────────── */
+function pesanMotivasi(skor) {
+  if (skor >= 80) return 'Pemahaman ZI kamu sudah solid! Kamu siap menjadi contoh integritas di lingkungan kerja.';
+  if (skor >= 60) return 'Fondasi kamu sudah ada — tinggal diperkuat. Baca kembali materi ZI Insight minggu ini dan perhatikan soal yang tadi kurang tepat.';
+  return 'Jangan khawatir, ini bukan ujian — ini proses belajar. Buka ZI Insight, baca pembahasannya pelan-pelan, dan kamu pasti akan lebih paham.';
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function tampilState(state) {
-  ['loading','login','tidak-ada','selesai','pilih','kuis','hasil'].forEach(s => {
+  ['loading','login','tidak-ada','selesai','sudah','pilih','kuis','hasil'].forEach(s => {
     document.getElementById(`state-${s}`).style.display = s === state ? 'block' : 'none';
   });
 }
 
-function acak(arr) {
-  return [...arr].sort(() => Math.random() - 0.5);
-}
-
-/* parseCSV tersedia global dari js/config.js */
+function acak(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 </script>
-
 </body>
 </html>

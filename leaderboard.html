@@ -367,6 +367,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/utils.js"></script>
   <script src="js/sidebar.js"></script>
   <script>
 
@@ -432,11 +433,13 @@
   async function pilihChallenge(challengeId) {
     tampilState('pilih');
     if (!challengeId) return;
-    const c = selesaiList.find(x => x.id === challengeId);
+    // challengeId bisa string (dari onchange) atau integer (dari direct call) — normalisasi ke string
+    const c = selesaiList.find(x => String(x.id) === String(challengeId));
     if (!c) return;
     tampilState('loading-inline');
 
-    if (dataLeaderboard[challengeId]) { renderHasil(dataLeaderboard[challengeId], c); return; }
+    const cacheKey = String(challengeId);
+    if (dataLeaderboard[cacheKey]) { renderHasil(dataLeaderboard[cacheKey], c); return; }
 
     const { data, error } = await db
       .from('riwayat_kuis')
@@ -476,7 +479,7 @@
     const result = Object.values(byPegawai).sort((a, b) =>
       b.nilai - a.nilai || a.waktu_submit - b.waktu_submit
     );
-    dataLeaderboard[challengeId] = result;
+    dataLeaderboard[cacheKey] = result;
     renderHasil(result, c);
   }
 
@@ -664,6 +667,9 @@
     }
 
     try {
+      // Auto-close challenge yang sudah lewat window sebelum fetch
+      await autoTutupChallengeExpired();
+
       const { data: chalData, error: errC } = await db
         .from('challenge')
         .select('*')
@@ -672,14 +678,21 @@
       allChallenges = chalData || [];
     } catch (e) { console.error('Gagal fetch challenge:', e); }
 
-    const aktif = allChallenges.find(c => c.status === 'aktif');
+    // Banner: challenge aktif yang windownya BELUM lewat
+    const sekarang = new Date();
+    const aktif = allChallenges.find(c => {
+      if ((c.status||'').toLowerCase() !== 'aktif') return false;
+      if (!c.tanggal || !c.jam_tutup) return true;
+      const jamTutup = new Date(`${c.tanggal}T${String(c.jam_tutup).slice(0,5)}:00+07:00`);
+      return sekarang <= jamTutup;
+    });
     if (aktif) {
       document.getElementById('active-banner-text').innerHTML =
         `<strong>${escHtml(aktif.judul)}</strong> sedang berlangsung. Leaderboard akan tampil setelah ditutup.`;
       document.getElementById('active-banner').style.display = 'flex';
     }
 
-    selesaiList = allChallenges.filter(c => c.status.toLowerCase() === 'selesai');
+    selesaiList = allChallenges.filter(c => (c.status||'').toLowerCase() === 'selesai');
 
     
     document.getElementById('loading').style.display    = 'none';

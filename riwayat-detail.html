@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Jawaban — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .detail-header-meta {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .detail-skor-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      background: var(--surface-card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 1.75rem;
+    }
+    .detail-skor-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.375rem; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .detail-skor-info { flex: 1; min-width: 0; }
+    .detail-skor-angka { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+    .detail-skor-label { font-size: 0.8125rem; color: var(--muted); margin-top: 2px; }
+    .detail-skor-pesan { font-size: 0.875rem; color: var(--text-secondary); margin-top: 6px; line-height: 1.55; }
+
+    /* Review soal */
+    .review-item {
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.125rem 1.25rem;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--border);
+    }
+    .review-item.benar  { border-left-color: var(--success); }
+    .review-item.salah  { border-left-color: var(--danger); }
+
+    .review-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .review-icon { font-size: 1.125rem; flex-shrink: 0; line-height: 1.4; }
+    .review-nomor { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 3px; }
+    .review-soal-teks { font-size: 0.9375rem; font-weight: 600; color: var(--text); line-height: 1.55; }
+
+    .review-jawaban-wrap { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .review-jawaban-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.8125rem; line-height: 1.5;
+    }
+    .review-jawaban-label {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--muted); width: 80px; flex-shrink: 0;
+    }
+    .review-jawaban-teks { color: var(--text-secondary); }
+    .review-jawaban-teks.benar { color: var(--success); font-weight: 600; }
+    .review-jawaban-teks.salah { color: var(--danger); }
+
+    .review-pembahasan {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      border-left: 3px solid var(--primary-light);
+    }
+    .review-pembahasan-label {
+      font-size: 0.6875rem; font-weight: 700;
+      color: var(--primary); text-transform: uppercase;
+      letter-spacing: 0.04em; margin-bottom: 4px;
+    }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 0.875rem; font-weight: 600; color: var(--muted);
+      text-decoration: none; margin-bottom: 1.25rem;
+    }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-container"></div>
+
+  <main class="main-content">
+
+    <div id="state-loading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="state-konten" style="display:none;">
+      <a href="riwayat.html" class="back-link">← Kembali ke Riwayat</a>
+
+      <div class="page-header" style="margin-bottom:0.5rem;">
+        <h1 class="page-title" id="detail-judul">Review Jawaban</h1>
+      </div>
+      <div class="detail-header-meta">
+        <span id="detail-tanggal"></span>
+        <span id="detail-area"></span>
+      </div>
+
+      <!-- Skor ringkasan -->
+      <div class="detail-skor-wrap">
+        <div class="detail-skor-circle" id="detail-skor-circle">—</div>
+        <div class="detail-skor-info">
+          <div class="detail-skor-angka" id="detail-skor-angka">—</div>
+          <div class="detail-skor-label" id="detail-skor-label">— dari — soal benar</div>
+          <div class="detail-skor-pesan" id="detail-skor-pesan"></div>
+        </div>
+      </div>
+
+      <!-- Review per soal -->
+      <h2 style="font-size:1rem;margin-bottom:1rem;">Review Soal</h2>
+      <div id="review-list"></div>
+    </div>
+
+    <div id="state-error" style="display:none;">
+      <div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Gagal memuat data</div>
+        <div class="empty-state-sub" id="error-pesan"></div>
+        <a href="riwayat.html" class="btn btn-outline" style="margin-top:1rem;">Kembali ke Riwayat</a>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async () => {
+  await loadSidebar('riwayat');
+  await requireLogin();
+
+  const params      = new URLSearchParams(window.location.search);
+  const challengeId = params.get('challenge_id');
+
+  if (!challengeId) { tampilError('Parameter challenge tidak ditemukan.'); return; }
+
+  const profil = await getProfil();
+  if (!profil) { tampilError('Sesi tidak valid, silakan login ulang.'); return; }
+
+  await muatDetail(challengeId, profil);
+})();
+
+async function muatDetail(challengeId, profil) {
+  try {
+    // Fetch paralel: riwayat user, data challenge, semua soal dari sheet
+    const [{ data: riwayat, error: errR }, { data: chalData, error: errC }, resSheet] = await Promise.all([
+      db.from('riwayat_kuis').select('*')
+        .eq('pegawai_id', profil.id)
+        .eq('challenge_id', String(challengeId))
+        .order('waktu', { ascending: true }),
+      db.from('challenge').select('*').eq('id', challengeId).single(),
+      fetch(CONFIG.SHEETS_SOAL),
+    ]);
+
+    if (errR) throw new Error('Gagal memuat riwayat: ' + errR.message);
+    if (errC) throw new Error('Gagal memuat data challenge: ' + errC.message);
+    if (!riwayat || riwayat.length === 0) {
+      tampilError('Tidak ada riwayat untuk challenge ini.');
+      return;
+    }
+
+    // Parse soal dari sheet — map by id untuk lookup cepat
+    const soalText = await resSheet.text();
+    const semuaSoal = parseCSV(soalText);
+    const soalMap = {};
+    semuaSoal.forEach(s => { soalMap[String(s.id)] = s; });
+
+    renderDetail(riwayat, chalData, soalMap);
+
+  } catch (e) {
+    console.error(e);
+    tampilError(e.message || 'Terjadi kesalahan.');
+  }
+}
+
+function renderDetail(riwayat, challenge, soalMap) {
+  // Hitung skor
+  const benarList  = riwayat.filter(r => r.benar);
+  const totalBenar = benarList.length;
+  const total      = riwayat.length;
+  const skor       = Math.min(100, Math.round(
+    riwayat.reduce((a, r) => a + (Number(r.nilai) || 0), 0)
+  ));
+
+  const warna = skor >= 80 ? 'var(--success)' : skor >= 60 ? 'var(--warning)' : 'var(--danger)';
+
+  // Header
+  if (challenge) {
+    const area = [challenge.nama_area_1||challenge.area_1, challenge.nama_area_2||challenge.area_2]
+      .filter(Boolean).join(' + ');
+    document.getElementById('detail-judul').textContent   = challenge.judul || 'Review Jawaban';
+    document.getElementById('detail-area').textContent    = area || '';
+    document.getElementById('detail-tanggal').textContent =
+      challenge.tanggal
+        ? new Date(challenge.tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })
+        : '';
+  }
+
+  // Skor ringkasan
+  const circleEl = document.getElementById('detail-skor-circle');
+  circleEl.textContent       = skor;
+  circleEl.style.background  = warna;
+  document.getElementById('detail-skor-angka').textContent = `${skor} dari 100`;
+  document.getElementById('detail-skor-angka').style.color = warna;
+  document.getElementById('detail-skor-label').textContent = `${totalBenar} dari ${total} soal benar`;
+  document.getElementById('detail-skor-pesan').textContent = pesanMotivasi(skor);
+
+  // Review per soal
+  const reviewEl = document.getElementById('review-list');
+  reviewEl.innerHTML = '';
+
+  riwayat.forEach((r, i) => {
+    const soal       = soalMap[String(r.soal_id)];
+    const tekssoal   = soal?.soal || `Soal #${r.soal_id}`;
+    const opsiBenar  = soal ? soal[`opsi_${soal.jawaban}`] : '—';
+    const opsiDipilih = soal ? soal[`opsi_${r.jawaban}`] : r.jawaban?.toUpperCase();
+    const pembahasan = soal?.pembahasan || '';
+
+    const item = document.createElement('div');
+    item.className = `review-item ${r.benar ? 'benar' : 'salah'}`;
+    item.innerHTML = `
+      <div class="review-header">
+        <div class="review-icon">${r.benar ? '✅' : '❌'}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="review-nomor">Soal ${i + 1}</div>
+          <div class="review-soal-teks">${escHtml(tekssoal)}</div>
+        </div>
+      </div>
+      <div class="review-jawaban-wrap">
+        ${!r.benar ? `
+        <div class="review-jawaban-row">
+          <span class="review-jawaban-label">Jawabanmu</span>
+          <span class="review-jawaban-teks salah">${escHtml(opsiDipilih || r.jawaban?.toUpperCase() || '—')}</span>
+        </div>` : ''}
+        <div class="review-jawaban-row">
+          <span class="review-jawaban-label">Jawaban benar</span>
+          <span class="review-jawaban-teks benar">${escHtml(opsiBenar || '—')}</span>
+        </div>
+      </div>
+      ${pembahasan ? `
+      <div class="review-pembahasan">
+        <div class="review-pembahasan-label">Pembahasan</div>
+        ${escHtml(pembahasan)}
+      </div>` : ''}
+    `;
+    reviewEl.appendChild(item);
+  });
+
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-konten').style.display  = '';
+}
+
+function pesanMotivasi(skor) {
+  if (skor >= 80) return 'Pemahaman ZI kamu sudah solid! Kamu siap menjadi contoh integritas di lingkungan kerja.';
+  if (skor >= 60) return 'Fondasi kamu sudah ada — tinggal diperkuat. Baca kembali materi ZI Insight minggu ini dan perhatikan soal yang kurang tepat.';
+  return 'Jangan khawatir, ini bukan ujian — ini proses belajar. Buka ZI Insight, baca pembahasannya pelan-pelan, dan kamu pasti akan lebih paham.';
+}
+
+function tampilError(pesan) {
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-error').style.display   = '';
+  document.getElementById('error-pesan').textContent     = pesan;
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

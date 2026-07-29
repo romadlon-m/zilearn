@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* ── Tabs ── */
@@ -170,6 +171,7 @@
                 <th>Judul</th>
                 <th>Area</th>
                 <th>Tanggal</th>
+                <th>Waktu</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
@@ -193,7 +195,7 @@
           <button class="btn btn-outline" onclick="refreshPartisipasi()" title="Muat ulang data partisipasi">
             ↺ Refresh
           </button>
-          <button class="btn btn-outline" disabled title="Fitur export akan tersedia di versi berikutnya" style="opacity:0.45;cursor:not-allowed;">
+          <button class="btn btn-outline" onclick="exportExcelPartisipasi()" title="Export tabel yang sedang tampil ke Excel">
             ↓ Export Excel
           </button>
         </div>
@@ -273,6 +275,7 @@
                   <th>Nama</th>
                   <th>Ruangan</th>
                   <th>Nilai</th>
+                  <th>Waktu Submit</th>
                 </tr>
               </thead>
               <tbody id="tbody-lb-admin"></tbody>
@@ -288,7 +291,7 @@
 <!-- Modal Tambah Challenge -->
 <div class="modal-overlay" id="modal-tambah">
   <div class="modal">
-    <div class="modal-title">Tambah Challenge</div>
+    <div class="modal-title" id="modal-title">Tambah Challenge</div>
     <div id="modal-alert" class="admin-alert"></div>
 
     <div class="form-group">
@@ -301,6 +304,7 @@
         <label class="form-label">Area 1 (wajib)</label>
         <select id="inp-area1" class="form-input">
           <option value="">— Pilih —</option>
+          <option value="P0">P0 — Test / Uji Coba</option>
           <option value="P1">P1 — Manajemen Perubahan</option>
           <option value="P2">P2 — Penataan Tatalaksana</option>
           <option value="P3">P3 — Penataan SDM</option>
@@ -313,6 +317,7 @@
         <label class="form-label">Area 2 (opsional)</label>
         <select id="inp-area2" class="form-input">
           <option value="">— Tidak ada —</option>
+          <option value="P0">P0 — Test / Uji Coba</option>
           <option value="P1">P1 — Manajemen Perubahan</option>
           <option value="P2">P2 — Penataan Tatalaksana</option>
           <option value="P3">P3 — Penataan SDM</option>
@@ -371,10 +376,12 @@
 
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/sidebar.js"></script>
 <script>
 
 const NAMA_PILAR = {
+  P0:'Test / Uji Coba',
   P1:'Manajemen Perubahan', P2:'Penataan Tatalaksana', P3:'Penataan SDM',
   P4:'Penguatan Akuntabilitas', P5:'Penguatan Pengawasan', P6:'Pelayanan Publik',
 };
@@ -386,6 +393,8 @@ let lbCache        = {};
 let filterAktif    = 'semua';
 let partRows       = [];
 let includeAdmin   = false;  // toggle include/exclude admin di rekap & lb admin
+let editMode       = false;  // true = edit, false = tambah baru
+let editId         = null;
 
 /* ── Init ── */
 (async () => {
@@ -405,7 +414,17 @@ let includeAdmin   = false;  // toggle include/exclude admin di rekap & lb admin
   const { data: chal, error: ec } = await db
     .from('challenge').select('*').order('tanggal', { ascending: false });
   if (ec) { showAlert('Gagal memuat challenge: ' + ec.message, 'error'); }
-  else allChallenges = chal || [];
+  else {
+    allChallenges = chal || [];
+    // Auto-close via utils.js, lalu sinkronisasi status di allChallenges
+    const jumlahTutup = await autoTutupChallengeExpired();
+    if (jumlahTutup > 0) {
+      // Re-fetch untuk sinkronisasi status terbaru
+      const { data: fresh } = await db.from('challenge').select('*').order('tanggal', { ascending: false });
+      if (fresh) allChallenges = fresh;
+      showAlert(`${jumlahTutup} challenge otomatis ditutup karena sudah melewati jam tutup.`, 'success');
+    }
+  }
 
   // Fetch semua pegawai (role pegawai saja)
   const { data: peg, error: ep } = await db
@@ -501,6 +520,8 @@ function pegawaiTampil() {
   return includeAdmin ? allPegawai : allPegawai.filter(p => p.role !== 'admin');
 }
 
+/* ── Auto-close (via utils.js) ── */
+
 /* ── Challenge Table ── */
 function renderChallengeTable() {
   const tbody = document.getElementById('tbody-challenge');
@@ -511,12 +532,23 @@ function renderChallengeTable() {
   tbody.innerHTML = allChallenges.map(c => {
     const status = (c.status || '').toLowerCase();
     let aksiHtml = '';
+    const editBtn = `<button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;"
+      onclick="bukaModalEdit(${c.id})">✏️ Edit</button>`;
+    // Hapus hanya boleh untuk draft — challenge aktif/selesai tidak bisa dihapus
+    const hapusBtn = status === 'draft'
+      ? `<button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;color:var(--danger);border-color:var(--danger);"
+          onclick="konfirmasiHapus(${c.id}, '${escHtml(c.judul)}')">🗑️ Hapus</button>`
+      : '';
+
     if (status === 'draft') {
-      aksiHtml = `<button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;"
-        onclick="konfirmasiUbahStatus(${c.id}, 'aktif', '${escHtml(c.judul)}')">Aktifkan</button>`;
+      aksiHtml = `${editBtn}
+        <button class="btn btn-outline" style="font-size:0.8125rem;padding:4px 12px;"
+          onclick="konfirmasiUbahStatus(${c.id}, 'aktif', '${escHtml(c.judul)}')">Aktifkan</button>
+        ${hapusBtn}`;
     } else if (status === 'aktif') {
-      aksiHtml = `<button class="btn" style="font-size:0.8125rem;padding:4px 12px;background:var(--warning-light);color:var(--warning);border:1px solid var(--warning);"
-        onclick="konfirmasiUbahStatus(${c.id}, 'selesai', '${escHtml(c.judul)}')">Tutup</button>`;
+      aksiHtml = `${editBtn}
+        <button class="btn" style="font-size:0.8125rem;padding:4px 12px;background:var(--warning-light);color:var(--warning);border:1px solid var(--warning);"
+          onclick="konfirmasiUbahStatus(${c.id}, 'selesai', '${escHtml(c.judul)}')">Tutup</button>`;
     } else {
       // Status selesai — tombol reset hanya muncul di DEV_MODE
       const resetBtn = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -530,14 +562,20 @@ function renderChallengeTable() {
         <td style="font-weight:600;">${escHtml(c.judul)}</td>
         <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(labelArea(c))}</td>
         <td style="font-size:0.8125rem;">${formatTanggal(c.tanggal)}</td>
+        <td style="font-size:0.8125rem;color:var(--text-secondary);white-space:nowrap;">
+          ${(c.jam_buka||'').slice(0,5)} – ${(c.jam_tutup||'').slice(0,5)}
+        </td>
         <td>${badgeHtml(c.status)}</td>
-        <td>${aksiHtml}</td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap;">${aksiHtml}</div></td>
       </tr>`;
   }).join('');
 }
 
-/* ── Tambah Challenge ── */
+/* ── Tambah / Edit Challenge ── */
 function bukaModalTambah() {
+  editMode = false; editId = null;
+  document.getElementById('modal-title').textContent   = 'Tambah Challenge';
+  document.getElementById('btn-simpan-challenge').textContent = 'Simpan';
   document.getElementById('modal-alert').style.display = 'none';
   document.getElementById('inp-judul').value       = '';
   document.getElementById('inp-area1').value       = '';
@@ -550,8 +588,29 @@ function bukaModalTambah() {
   document.getElementById('modal-tambah').classList.add('open');
 }
 
+function bukaModalEdit(id) {
+  const c = allChallenges.find(x => x.id === id);
+  if (!c) return;
+  editMode = true; editId = id;
+  document.getElementById('modal-title').textContent   = 'Edit Challenge';
+  document.getElementById('btn-simpan-challenge').textContent = 'Simpan Perubahan';
+  document.getElementById('modal-alert').style.display = 'none';
+  document.getElementById('inp-judul').value       = c.judul || '';
+  document.getElementById('inp-area1').value       = c.area_1 || '';
+  document.getElementById('inp-area2').value       = c.area_2 || '';
+  // tanggal dari Supabase date type: YYYY-MM-DD
+  document.getElementById('inp-tanggal').value     = c.tanggal || '';
+  document.getElementById('inp-jumlah').value      = c.jumlah_soal || 10;
+  // jam dari Supabase time type: HH:MM:SS — potong jadi HH:MM
+  document.getElementById('inp-jam-buka').value    = (c.jam_buka  || '08:00').slice(0,5);
+  document.getElementById('inp-jam-tutup').value   = (c.jam_tutup || '23:59').slice(0,5);
+  document.getElementById('inp-insight-ref').value = c.insight_ref || '';
+  document.getElementById('modal-tambah').classList.add('open');
+}
+
 function tutupModal() {
   document.getElementById('modal-tambah').classList.remove('open');
+  editMode = false; editId = null;
 }
 
 async function simpanChallenge() {
@@ -581,29 +640,42 @@ async function simpanChallenge() {
     jam_buka    : jamBuka,
     jam_tutup   : jamTutup,
     jumlah_soal : jumlah,
-    status      : 'draft',
     insight_ref : insRef || null,
   };
 
-  const { data, error } = await db.from('challenge').insert(payload).select().single();
-
-  btn.disabled = false; btn.textContent = 'Simpan';
-
-  if (error) { showModalAlert('Gagal menyimpan: ' + error.message, 'error'); return; }
-
-  allChallenges.unshift(data);
-  renderChallengeTable();
-
-  // Tambah ke dropdown partisipasi & leaderboard
-  const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
-  ['part-select','lb-select'].forEach(id => {
-    const o = document.createElement('option');
-    o.value = data.id; o.textContent = label;
-    document.getElementById(id).appendChild(o);
-  });
-
-  tutupModal();
-  showAlert(`Challenge "${data.judul}" berhasil ditambahkan.`, 'success');
+  if (editMode && editId) {
+    // UPDATE
+    const { data, error } = await db.from('challenge').update(payload).eq('id', editId).select().single();
+    btn.disabled = false; btn.textContent = 'Simpan Perubahan';
+    if (error) { showModalAlert('Gagal menyimpan: ' + error.message, 'error'); return; }
+    const idx = allChallenges.findIndex(c => c.id === editId);
+    if (idx !== -1) allChallenges[idx] = data;
+    renderChallengeTable();
+    // Update label di dropdown
+    const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
+    ['part-select','lb-select'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      const opt = [...sel.options].find(o => String(o.value) === String(data.id));
+      if (opt) opt.textContent = label;
+    });
+    tutupModal();
+    showAlert(`Challenge "${data.judul}" berhasil diperbarui.`, 'success');
+  } else {
+    // INSERT
+    const { data, error } = await db.from('challenge').insert({ ...payload, status: 'draft' }).select().single();
+    btn.disabled = false; btn.textContent = 'Simpan';
+    if (error) { showModalAlert('Gagal menyimpan: ' + error.message, 'error'); return; }
+    allChallenges.unshift(data);
+    renderChallengeTable();
+    const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
+    ['part-select','lb-select'].forEach(selId => {
+      const o = document.createElement('option');
+      o.value = data.id; o.textContent = label;
+      document.getElementById(selId).appendChild(o);
+    });
+    tutupModal();
+    showAlert(`Challenge "${data.judul}" berhasil ditambahkan.`, 'success');
+  }
 }
 
 /* ── Ubah Status Challenge ── */
@@ -635,19 +707,60 @@ async function eksekusiUbahStatus() {
   const btn = document.getElementById('btn-konfirm-ok');
   btn.disabled = true; btn.textContent = 'Memproses...';
 
+  // Simpan ke var lokal dulu — tutupKonfirm() akan null-kan pending vars
+  const idTarget     = pendingStatusId;
+  const statusTarget = pendingStatusBaru;
+
   const { error } = await db.from('challenge')
-    .update({ status: pendingStatusBaru })
-    .eq('id', pendingStatusId);
+    .update({ status: statusTarget })
+    .eq('id', idTarget);
 
   btn.disabled = false; btn.textContent = 'Ya, lanjutkan';
   tutupKonfirm();
 
   if (error) { showAlert('Gagal ubah status: ' + error.message, 'error'); return; }
 
-  const idx = allChallenges.findIndex(c => c.id === pendingStatusId);
-  if (idx !== -1) allChallenges[idx].status = pendingStatusBaru;
+  const idx = allChallenges.findIndex(c => c.id === idTarget);
+  if (idx !== -1) allChallenges[idx].status = statusTarget;
   renderChallengeTable();
   showAlert('Status challenge berhasil diubah.', 'success');
+}
+
+/* ── Hapus Challenge ── */
+let pendingHapusId = null;
+
+function konfirmasiHapus(id, judul) {
+  pendingHapusId = id;
+  document.getElementById('konfirm-title').textContent = 'Hapus Challenge?';
+  document.getElementById('konfirm-pesan').innerHTML   =
+    `Challenge <strong>${judul}</strong> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`;
+  document.getElementById('btn-konfirm-ok').onclick = eksekusiHapus;
+  document.getElementById('konfirm-status').classList.add('open');
+}
+
+async function eksekusiHapus() {
+  if (!pendingHapusId) return;
+  const btn = document.getElementById('btn-konfirm-ok');
+  btn.disabled = true; btn.textContent = 'Menghapus...';
+
+  const idTarget = pendingHapusId;
+  const { error } = await db.from('challenge').delete().eq('id', idTarget);
+
+  btn.disabled = false; btn.textContent = 'Ya, lanjutkan';
+  tutupKonfirm();
+  pendingHapusId = null;
+
+  if (error) { showAlert('Gagal menghapus: ' + error.message, 'error'); return; }
+
+  allChallenges = allChallenges.filter(c => c.id !== idTarget);
+  renderChallengeTable();
+  // Hapus dari dropdown
+  ['part-select','lb-select'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    const opt = [...sel.options].find(o => String(o.value) === String(idTarget));
+    if (opt) sel.removeChild(opt);
+  });
+  showAlert('Challenge berhasil dihapus.', 'success');
 }
 
 /* ── Partisipasi ── */
@@ -759,6 +872,43 @@ function renderPartTable(rows) {
     </tr>`).join('');
 }
 
+function exportExcelPartisipasi() {
+  if (!partRows.length) { showAlert('Tidak ada data untuk diekspor.', 'error'); return; }
+
+  // Ambil baris yang sedang tampil (sesuai filter aktif)
+  const filtered = filterAktif === 'sudah' ? partRows.filter(r => r.sudah)
+    : filterAktif === 'belum' ? partRows.filter(r => !r.sudah)
+    : partRows;
+
+  const sembunyiNilai = filterAktif === 'belum';
+
+  // Header sesuai tampilan tabel
+  const header = sembunyiNilai
+    ? ['#', 'Nama', 'Satker', 'Ruangan', 'Status']
+    : ['#', 'Nama', 'Satker', 'Ruangan', 'Status', 'Nilai'];
+
+  const rows = filtered.map((r, i) => {
+    const base = [i + 1, r.nama, r.satker || '', r.ruangan || '—', r.sudah ? 'Sudah' : 'Belum'];
+    return sembunyiNilai ? base : [...base, r.sudah ? r.nilai : ''];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+  // Lebar kolom
+  ws['!cols'] = [
+    { wch: 4 }, { wch: 30 }, { wch: 10 }, { wch: 16 }, { wch: 10 }, { wch: 8 }
+  ];
+
+  // Nama file — ambil label challenge dari dropdown
+  const sel   = document.getElementById('part-select');
+  const label = sel.options[sel.selectedIndex]?.text || 'partisipasi';
+  const namaFile = `partisipasi_${label.replace(/[^a-zA-Z0-9_]/g, '_')}.xlsx`;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Partisipasi');
+  XLSX.writeFile(wb, namaFile);
+}
+
 /* ── Leaderboard Admin ── */
 function tampilLbEmpty() {
   document.getElementById('lb-admin-empty').style.display  = '';
@@ -779,18 +929,20 @@ async function muatLbAdmin(challengeId) {
   if (error) { showAlert('Gagal memuat leaderboard: ' + error.message, 'error'); return; }
 
   // Aggregate: SUM nilai + MAX waktu per pegawai
+  // Lookup pakai allPegawai (bukan pegawaiTampil) agar admin tidak jadi "tidak dikenal"
   const byPeg = {};
   (data||[]).forEach(r => {
     const pid = r.pegawai_id;
     const n   = Number(r.nilai) || 0;
     const ts  = r.waktu ? new Date(r.waktu).getTime() : 0;
-    const peg = pegawaiTampil().find(p => p.id === pid);
+    const peg = allPegawai.find(p => p.id === pid);
     if (!byPeg[pid]) {
       byPeg[pid] = {
         nama        : peg?.nama || '(tidak dikenal)',
         nama_samaran: peg?.nama_samaran || '—',
         ruangan     : peg?.ruangan || '',
         satker      : peg?.satker || '',
+        role        : peg?.role || '',
         nilai       : 0,
         waktu_submit: 0,
       };
@@ -800,7 +952,10 @@ async function muatLbAdmin(challengeId) {
   });
 
   Object.values(byPeg).forEach(p => { p.nilai = Math.min(100, Math.round(p.nilai)); });
-  const result = Object.values(byPeg).sort((a,b) => b.nilai - a.nilai || a.waktu_submit - b.waktu_submit);
+  // Filter admin setelah aggregasi, bukan saat lookup
+  let result = Object.values(byPeg);
+  if (!includeAdmin) result = result.filter(r => r.role !== 'admin');
+  result.sort((a,b) => b.nilai - a.nilai || a.waktu_submit - b.waktu_submit);
   lbCache[challengeId] = result;
   renderLbAdmin(result);
 }
@@ -815,6 +970,15 @@ function renderLbAdmin(rows) {
   }
 
   const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+  const fmtWaktu = ts => {
+    if (!ts) return '—';
+    // Supabase waktu UTC → tampilkan WIB (UTC+7)
+    const d = new Date(ts);
+    const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    const hh  = String(wib.getUTCHours()).padStart(2,'0');
+    const mm  = String(wib.getUTCMinutes()).padStart(2,'0');
+    return `${hh}:${mm} WIB`;
+  };
   document.getElementById('tbody-lb-admin').innerHTML = rows.map((r, i) => `
     <tr>
       <td style="text-align:center;font-size:${i<3?'1.125':'0.875'}rem;">${medal(i+1)}</td>
@@ -824,6 +988,7 @@ function renderLbAdmin(rows) {
       </td>
       <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.ruangan||r.satker||'—')}</td>
       <td style="font-weight:700;color:var(--primary);font-size:1rem;">${r.nilai}</td>
+      <td style="font-size:0.8125rem;color:var(--muted);">${fmtWaktu(r.waktu_submit)}</td>
     </tr>`).join('');
 
   document.getElementById('lb-admin-hasil').style.display = '';
