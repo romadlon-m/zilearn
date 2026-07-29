@@ -197,9 +197,8 @@ async function simpanNamaSamaran(namaSamaran) {
 async function redirectSetelahLogin(tujuan) {
   const sudahAda = await cekNamaSamaran();
   if (!sudahAda) {
-    // Simpan tujuan akhir supaya setelah isi nama samaran bisa redirect ke sana
     sessionStorage.setItem('zi_after_nama_samaran', tujuan);
-    window.location.replace('profil.html');
+    window.location.replace('nama-samaran.html');
   } else {
     window.location.replace(tujuan);
   }
