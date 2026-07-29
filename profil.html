@@ -223,6 +223,7 @@ function renderProfil(p) {
 
 function renderGoogleStatus(email) {
   const wrap = document.getElementById('google-status-wrap');
+  if (!wrap) return; // section dinonaktifkan sementara
   if (email) {
     wrap.innerHTML = `
       <div class="google-status linked" style="margin-bottom:0.75rem;">
