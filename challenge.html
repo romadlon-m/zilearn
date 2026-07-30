@@ -359,17 +359,15 @@ async function muatChallenge() {
 function cekWindowChallenge(c) {
   if (!c.tanggal || !c.jam_buka || !c.jam_tutup) return 'buka'; // tidak ada window → buka
 
-  const sekarang = new Date();
-
-  // Supabase simpan date sebagai YYYY-MM-DD, time sebagai HH:MM:SS
-  // Admin input WIB — bangun Date object sebagai WIB (UTC+7)
-  const bukaTgl  = c.tanggal; // YYYY-MM-DD
-  const bukaJam  = (c.jam_buka  || '08:00:00').slice(0, 5); // HH:MM
-  const tutupJam = (c.jam_tutup || '23:59:00').slice(0, 5); // HH:MM
+  const sekarang   = new Date();
+  const bukaTgl    = c.tanggal;                                    // YYYY-MM-DD hari buka
+  const tutupTgl   = c.tanggal_tutup || c.tanggal;                 // YYYY-MM-DD hari tutup (fallback ke tanggal)
+  const bukaJam    = (c.jam_buka  || '08:00:00').slice(0, 5);      // HH:MM
+  const tutupJam   = (c.jam_tutup || '23:59:00').slice(0, 5);      // HH:MM
 
   // Parse sebagai WIB: tambah offset +07:00
-  const jamBuka  = new Date(`${bukaTgl}T${bukaJam}:00+07:00`);
-  const jamTutup = new Date(`${bukaTgl}T${tutupJam}:00+07:00`);
+  const jamBuka    = new Date(`${bukaTgl}T${bukaJam}:00+07:00`);
+  const jamTutup   = new Date(`${tutupTgl}T${tutupJam}:00+07:00`);
 
   if (sekarang < jamBuka)  return 'belum';
   if (sekarang > jamTutup) return 'lewat';

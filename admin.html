@@ -330,12 +330,12 @@
 
     <div class="form-row" style="margin-top:1rem;">
       <div class="form-group">
-        <label class="form-label">Tanggal</label>
-        <input type="date" id="inp-tanggal" class="form-input">
+        <label class="form-label">Tanggal Buka</label>
+        <input type="date" id="inp-tanggal" class="form-input" onchange="syncTanggalTutup()">
       </div>
       <div class="form-group">
-        <label class="form-label">Jumlah Soal</label>
-        <input type="number" id="inp-jumlah" class="form-input" value="10" min="1" max="30">
+        <label class="form-label">Tanggal Tutup</label>
+        <input type="date" id="inp-tanggal-tutup" class="form-input">
       </div>
     </div>
 
@@ -347,6 +347,13 @@
       <div class="form-group">
         <label class="form-label">Jam Tutup</label>
         <input type="time" id="inp-jam-tutup" class="form-input" value="23:59">
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group">
+        <label class="form-label">Jumlah Soal</label>
+        <input type="number" id="inp-jumlah" class="form-input" value="10" min="1" max="30">
       </div>
     </div>
 
@@ -561,7 +568,12 @@ function renderChallengeTable() {
       <tr>
         <td style="font-weight:600;">${escHtml(c.judul)}</td>
         <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(labelArea(c))}</td>
-        <td style="font-size:0.8125rem;">${formatTanggal(c.tanggal)}</td>
+        <td style="font-size:0.8125rem;">
+          ${formatTanggal(c.tanggal)}
+          ${c.tanggal_tutup && c.tanggal_tutup !== c.tanggal
+            ? `<span style="color:var(--muted);">–</span> ${formatTanggal(c.tanggal_tutup)}`
+            : ''}
+        </td>
         <td style="font-size:0.8125rem;color:var(--text-secondary);white-space:nowrap;">
           ${(c.jam_buka||'').slice(0,5)} – ${(c.jam_tutup||'').slice(0,5)}
         </td>
@@ -569,6 +581,13 @@ function renderChallengeTable() {
         <td><div style="display:flex;gap:6px;flex-wrap:wrap;">${aksiHtml}</div></td>
       </tr>`;
   }).join('');
+}
+
+/* ── Sync tanggal tutup = tanggal buka saat input pertama kali ── */
+function syncTanggalTutup() {
+  const buka  = document.getElementById('inp-tanggal').value;
+  const tutup = document.getElementById('inp-tanggal-tutup');
+  if (buka && !tutup.value) tutup.value = buka;
 }
 
 /* ── Tambah / Edit Challenge ── */
@@ -580,11 +599,12 @@ function bukaModalTambah() {
   document.getElementById('inp-judul').value       = '';
   document.getElementById('inp-area1').value       = '';
   document.getElementById('inp-area2').value       = '';
-  document.getElementById('inp-tanggal').value     = '';
-  document.getElementById('inp-jumlah').value      = '10';
-  document.getElementById('inp-jam-buka').value    = '08:00';
-  document.getElementById('inp-jam-tutup').value   = '23:59';
-  document.getElementById('inp-insight-ref').value = '';
+  document.getElementById('inp-tanggal').value        = '';
+  document.getElementById('inp-tanggal-tutup').value  = '';
+  document.getElementById('inp-jumlah').value         = '10';
+  document.getElementById('inp-jam-buka').value       = '08:00';
+  document.getElementById('inp-jam-tutup').value      = '23:59';
+  document.getElementById('inp-insight-ref').value    = '';
   document.getElementById('modal-tambah').classList.add('open');
 }
 
@@ -599,8 +619,9 @@ function bukaModalEdit(id) {
   document.getElementById('inp-area1').value       = c.area_1 || '';
   document.getElementById('inp-area2').value       = c.area_2 || '';
   // tanggal dari Supabase date type: YYYY-MM-DD
-  document.getElementById('inp-tanggal').value     = c.tanggal || '';
-  document.getElementById('inp-jumlah').value      = c.jumlah_soal || 10;
+  document.getElementById('inp-tanggal').value        = c.tanggal || '';
+  document.getElementById('inp-tanggal-tutup').value  = c.tanggal_tutup || c.tanggal || '';
+  document.getElementById('inp-jumlah').value         = c.jumlah_soal || 10;
   // jam dari Supabase time type: HH:MM:SS — potong jadi HH:MM
   document.getElementById('inp-jam-buka').value    = (c.jam_buka  || '08:00').slice(0,5);
   document.getElementById('inp-jam-tutup').value   = (c.jam_tutup || '23:59').slice(0,5);
@@ -617,30 +638,34 @@ async function simpanChallenge() {
   const judul    = document.getElementById('inp-judul').value.trim();
   const area1    = document.getElementById('inp-area1').value;
   const area2    = document.getElementById('inp-area2').value;
-  const tanggal  = document.getElementById('inp-tanggal').value;
-  const jumlah   = parseInt(document.getElementById('inp-jumlah').value) || 10;
-  const jamBuka  = document.getElementById('inp-jam-buka').value;
-  const jamTutup = document.getElementById('inp-jam-tutup').value;
-  const insRef   = document.getElementById('inp-insight-ref').value.trim();
+  const tanggal       = document.getElementById('inp-tanggal').value;
+  const tanggalTutup  = document.getElementById('inp-tanggal-tutup').value;
+  const jumlah        = parseInt(document.getElementById('inp-jumlah').value) || 10;
+  const jamBuka       = document.getElementById('inp-jam-buka').value;
+  const jamTutup      = document.getElementById('inp-jam-tutup').value;
+  const insRef        = document.getElementById('inp-insight-ref').value.trim();
 
-  if (!judul)   { showModalAlert('Judul wajib diisi.', 'error'); return; }
-  if (!area1)   { showModalAlert('Area 1 wajib dipilih.', 'error'); return; }
-  if (!tanggal) { showModalAlert('Tanggal wajib diisi.', 'error'); return; }
+  if (!judul)        { showModalAlert('Judul wajib diisi.', 'error'); return; }
+  if (!area1)        { showModalAlert('Area 1 wajib dipilih.', 'error'); return; }
+  if (!tanggal)      { showModalAlert('Tanggal Buka wajib diisi.', 'error'); return; }
+  if (!tanggalTutup) { showModalAlert('Tanggal Tutup wajib diisi.', 'error'); return; }
+  if (tanggalTutup < tanggal) { showModalAlert('Tanggal Tutup tidak boleh sebelum Tanggal Buka.', 'error'); return; }
 
   const btn = document.getElementById('btn-simpan-challenge');
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
   const payload = {
     judul,
-    area_1      : area1,
-    nama_area_1 : NAMA_PILAR[area1] || area1,
-    area_2      : area2 || null,
-    nama_area_2 : area2 ? (NAMA_PILAR[area2] || area2) : null,
+    area_1         : area1,
+    nama_area_1    : NAMA_PILAR[area1] || area1,
+    area_2         : area2 || null,
+    nama_area_2    : area2 ? (NAMA_PILAR[area2] || area2) : null,
     tanggal,
-    jam_buka    : jamBuka,
-    jam_tutup   : jamTutup,
-    jumlah_soal : jumlah,
-    insight_ref : insRef || null,
+    tanggal_tutup  : tanggalTutup,
+    jam_buka       : jamBuka,
+    jam_tutup      : jamTutup,
+    jumlah_soal    : jumlah,
+    insight_ref    : insRef || null,
   };
 
   if (editMode && editId) {

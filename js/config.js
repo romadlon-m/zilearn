@@ -3,6 +3,19 @@
    Simpan di: js/config.js
    ============================================================ */
 
+/* ============================================================
+   SKEMA DATABASE — CATATAN PENTING
+
+   Tabel `challenge`:
+   - `tanggal`        : tanggal buka (date) — dipakai bersama jam_buka untuk window mulai
+   - `tanggal_tutup`  : tanggal tutup (date) — dipakai bersama jam_tutup untuk window selesai
+   - Sebelum kolom tanggal_tutup ada, diasumsikan 1 hari (tanggal = buka sekaligus tutup)
+   - Data lama: tanggal_tutup sudah diisi = tanggal via SQL migration
+   - jam_buka berlaku di tanggal (hari buka), jam_tutup berlaku di tanggal_tutup (hari tutup)
+
+   Jangan hapus catatan ini — diperlukan untuk memahami logika window challenge.
+   ============================================================ */
+
 const CONFIG = {
 
   /* ── Supabase ─────────────────────────────────────────── */

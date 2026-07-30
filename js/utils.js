@@ -16,15 +16,15 @@ async function autoTutupChallengeExpired() {
 
     const { data, error } = await db
       .from('challenge')
-      .select('id, tanggal, jam_tutup')
+      .select('id, tanggal_tutup, jam_tutup')
       .or('status.eq.Aktif,status.eq.aktif');
 
     if (error || !data?.length) return 0;
 
     const expired = data.filter(c => {
-      if (!c.tanggal || !c.jam_tutup) return false;
+      if (!c.tanggal_tutup || !c.jam_tutup) return false;
       // Admin input WIB — parse dengan offset +07:00
-      const jamTutup = new Date(`${c.tanggal}T${String(c.jam_tutup).slice(0,5)}:00+07:00`);
+      const jamTutup = new Date(`${c.tanggal_tutup}T${String(c.jam_tutup).slice(0,5)}:00+07:00`);
       return sekarang > jamTutup;
     });
 
