@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitoring — ZI Learning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Stats ── */
+    .mon-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 640px) { .mon-stats { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── Grafik per tim ── */
+    .tim-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .tim-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .tim-card-name {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tim-card-counts {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+    .tim-bar-wrap {
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .tim-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
+    .tim-bar-fill.full { background: #16a34a; }
+    .tim-pct {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-top: 0.375rem;
+    }
+
+    /* ── Tabel ── */
+    .mon-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .mon-table th {
+      text-align: left;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+      background: var(--surface);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .mon-table td {
+      padding: 0.75rem 0.875rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .mon-table tr:last-child td { border-bottom: none; }
+    .mon-table tbody tr:hover { background: var(--surface); }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 10px; border-radius: 99px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-sudah { background: #dcfce7; color: #166534; }
+    .badge-belum { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Filter toggle ── */
+    .filter-toggle { display: flex; gap: 4px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 0.375rem 1rem; font-size: 0.8125rem; font-weight: 600;
+      border: 1.5px solid var(--border); border-radius: 99px;
+      background: #fff; color: var(--muted); cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* ── Select ── */
+    .mon-select {
+      padding: 0.5rem 2rem 0.5rem 0.875rem;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.875rem;
+      color: var(--text); background: #fff; outline: none; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      min-width: 240px;
+    }
+    .mon-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(230,126,34,0.12); }
+
+    /* ── Auto-refresh indicator ── */
+    .refresh-info {
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .refresh-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #16a34a;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div id="sidebar-placeholder"></div>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">Monitoring</h1>
+      <p class="page-subtitle">Pantau partisipasi ZI Challenge — saling ingatkan rekan yang belum ikut</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Memuat data…</p>
+    </div>
+
+    <!-- Konten utama -->
+    <div id="mon-content" style="display:none;">
+
+      <!-- Toolbar: pilih challenge + refresh info -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
+        <label style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);">Challenge:</label>
+        <select id="mon-select" class="mon-select" onchange="pilihChallenge(this.value)">
+          <option value="">— Pilih challenge —</option>
+        </select>
+        <button class="btn btn-outline" onclick="refresh()" title="Muat ulang data" style="font-size:0.8125rem;">
+          ↺ Refresh
+        </button>
+        <div class="refresh-info">
+          <span class="refresh-dot"></span>
+          <span id="refresh-label">Auto-refresh setiap 60 detik</span>
+        </div>
+      </div>
+
+      <!-- State: pilih dulu -->
+      <div id="state-pilih" class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Pilih challenge untuk melihat data partisipasi</div>
+      </div>
+
+      <!-- State: tidak ada challenge -->
+      <div id="state-kosong" class="empty-state" style="display:none;">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">Belum ada challenge</div>
+        <div class="empty-state-sub">Challenge akan muncul di sini saat sudah dibuat oleh admin.</div>
+      </div>
+
+      <!-- Data partisipasi -->
+      <div id="state-data" style="display:none;">
+
+        <!-- Stat cards -->
+        <div class="mon-stats">
+          <div class="stat-card">
+            <div class="stat-label">Total Pegawai</div>
+            <div class="stat-value" id="stat-total">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sudah</div>
+            <div class="stat-value" style="color:var(--success);" id="stat-sudah">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Belum</div>
+            <div class="stat-value" style="color:var(--danger);" id="stat-belum">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Partisipasi</div>
+            <div class="stat-value" id="stat-pct">—</div>
+            <div class="stat-sub">persen</div>
+          </div>
+        </div>
+
+        <!-- Grafik per tim (satker 1900) -->
+        <div id="tim-section" style="display:none;">
+          <div class="section-label">Partisipasi per Tim</div>
+          <div class="tim-grid" id="tim-grid"></div>
+        </div>
+
+        <!-- Filter + tabel -->
+        <div class="section-label" style="margin-bottom:0.5rem;">Daftar Pegawai</div>
+
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:1rem;">
+          <div class="filter-toggle" style="margin-bottom:0;">
+            <button class="filter-btn active" onclick="filterData('semua', this)">Semua</button>
+            <button class="filter-btn" onclick="filterData('sudah', this)">Sudah</button>
+            <button class="filter-btn" onclick="filterData('belum', this)">Belum</button>
+          </div>
+          <!-- Filter tim — muncul hanya kalau ada data ruangan -->
+          <div id="filter-tim-wrap" style="display:none;">
+            <select id="filter-tim" class="mon-select" style="min-width:160px;" onchange="filterData(filterAktif)">
+              <option value="">Semua Tim</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow-y:auto;max-height:60vh;">
+          <table class="mon-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nama</th>
+                <th>Satker</th>
+                <th>Ruangan / Tim</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-mon"></tbody>
+          </table>
+        </div>
+
+      </div><!-- /state-data -->
+    </div><!-- /mon-content -->
+  </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+
+let allChallenges  = [];
+let allPegawai     = [];
+let monRows        = [];   // rows untuk challenge yang aktif dipilih
+let filterAktif    = 'semua';
+let filterTim      = '';
+let currentChallengeId = null;
+let autoRefreshTimer   = null;
+
+/* ── Init ─────────────────────────────────────────────────── */
+(async () => {
+  // Sidebar
+  const sidebarEl = document.getElementById('sidebar-placeholder');
+  if (sidebarEl) {
+    try {
+      const res = await fetch('components/sidebar.html');
+      sidebarEl.innerHTML = await res.text();
+      initSidebar('monitoring');
+    } catch (e) { console.error('Sidebar error:', e); }
+  }
+
+  // Auto-close expired challenges
+  await autoTutupChallengeExpired();
+
+  // Fetch semua challenge
+  const { data: chal, error: ec } = await db
+    .from('challenge')
+    .select('*')
+    .order('tanggal', { ascending: false });
+  if (ec) { console.error('Gagal fetch challenge:', ec.message); }
+  else allChallenges = chal || [];
+
+  // Fetch semua pegawai (kecuali admin)
+  const { data: peg, error: ep } = await db
+    .from('pegawai')
+    .select('id, nama, satker, ruangan, role')
+    .order('nama', { ascending: true });
+  if (ep) { console.error('Gagal fetch pegawai:', ep.message); }
+  else allPegawai = (peg || []).filter(p => p.role !== CONFIG.ROLE_ADMIN);
+
+  document.getElementById('loading').style.display    = 'none';
+  document.getElementById('mon-content').style.display = '';
+
+  if (!allChallenges.length) {
+    tampilState('kosong');
+    return;
+  }
+
+  // Isi dropdown challenge (aktif + selesai, bukan draft)
+  const select = document.getElementById('mon-select');
+  allChallenges
+    .filter(c => (c.status||'').toLowerCase() !== 'draft')
+    .forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      const statusLabel = (c.status||'').toLowerCase() === 'aktif' ? ' 🟢' : '';
+      opt.textContent = `${c.judul} (${formatTanggal(c.tanggal)})${statusLabel}`;
+      select.appendChild(opt);
+    });
+
+  // Default: challenge aktif jika ada, atau yang terbaru
+  const aktif = allChallenges.find(c => (c.status||'').toLowerCase() === 'aktif');
+  const defaultC = aktif || allChallenges.find(c => (c.status||'').toLowerCase() !== 'draft');
+
+  if (defaultC) {
+    select.value = defaultC.id;
+    await pilihChallenge(defaultC.id);
+  } else {
+    tampilState('pilih');
+  }
+})();
+
+/* ── Pilih challenge ─────────────────────────────────────── */
+async function pilihChallenge(challengeId) {
+  stopAutoRefresh();
+  if (!challengeId) { tampilState('pilih'); return; }
+  currentChallengeId = challengeId;
+  await muatData(challengeId);
+
+  // Auto-refresh hanya untuk challenge aktif
+  const c = allChallenges.find(x => String(x.id) === String(challengeId));
+  if (c && (c.status||'').toLowerCase() === 'aktif') {
+    mulaiAutoRefresh();
+  } else {
+    document.getElementById('refresh-label').textContent = 'Challenge sudah selesai';
+    document.querySelector('.refresh-dot').style.background = '#94a3b8';
+    document.querySelector('.refresh-dot').style.animation = 'none';
+  }
+}
+
+/* ── Muat & render data ──────────────────────────────────── */
+async function muatData(challengeId) {
+  const { data: riwayat, error } = await db
+    .from('riwayat_kuis')
+    .select('pegawai_id')
+    .eq('challenge_id', String(challengeId));
+
+  if (error) { console.error('Gagal fetch riwayat:', error.message); return; }
+
+  const sudahSet = new Set((riwayat || []).map(r => r.pegawai_id));
+
+  monRows = allPegawai.map(p => ({
+    ...p,
+    sudah: sudahSet.has(p.id),
+  }));
+
+  renderStats();
+  renderTimGrid();
+  renderFilterTim();
+  renderTabel(monRows);
+  tampilState('data');
+}
+
+/* ── Stat cards ──────────────────────────────────────────── */
+function renderStats() {
+  const total = monRows.length;
+  const sudah = monRows.filter(r => r.sudah).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-sudah').textContent = sudah;
+  document.getElementById('stat-belum').textContent = total - sudah;
+  document.getElementById('stat-pct').textContent   = total ? Math.round(sudah / total * 100) : 0;
+}
+
+/* ── Grafik per tim ──────────────────────────────────────── */
+function renderTimGrid() {
+  // Hanya untuk satker 1900 yang punya ruangan
+  const denganRuangan = monRows.filter(r => r.satker === '1900' && r.ruangan);
+  if (!denganRuangan.length) {
+    document.getElementById('tim-section').style.display = 'none';
+    return;
+  }
+
+  const byTim = {};
+  denganRuangan.forEach(r => {
+    if (!byTim[r.ruangan]) byTim[r.ruangan] = { total: 0, sudah: 0 };
+    byTim[r.ruangan].total++;
+    if (r.sudah) byTim[r.ruangan].sudah++;
+  });
+
+  const grid = document.getElementById('tim-grid');
+  grid.innerHTML = Object.entries(byTim)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([nama, d]) => {
+      const pct  = d.total ? Math.round(d.sudah / d.total * 100) : 0;
+      const full = pct === 100;
+      return `
+        <div class="tim-card">
+          <div class="tim-card-name" title="${escHtml(nama)}">${escHtml(nama)}</div>
+          <div class="tim-card-counts">${d.sudah} / ${d.total} pegawai</div>
+          <div class="tim-bar-wrap">
+            <div class="tim-bar-fill${full ? ' full' : ''}" style="width:${pct}%"></div>
+          </div>
+          <div class="tim-pct" style="${full ? 'color:#16a34a' : ''}">${pct}%</div>
+        </div>`;
+    }).join('');
+
+  document.getElementById('tim-section').style.display = '';
+}
+
+/* ── Filter tim dropdown ─────────────────────────────────── */
+function renderFilterTim() {
+  const ruanganSet = new Set(monRows.filter(r => r.ruangan).map(r => r.ruangan));
+  if (!ruanganSet.size) {
+    document.getElementById('filter-tim-wrap').style.display = 'none';
+    return;
+  }
+
+  const sel = document.getElementById('filter-tim');
+  // Reset options
+  sel.innerHTML = '<option value="">Semua Tim</option>';
+  [...ruanganSet].sort().forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r;
+    opt.textContent = r;
+    sel.appendChild(opt);
+  });
+  sel.value = filterTim;
+  document.getElementById('filter-tim-wrap').style.display = '';
+}
+
+/* ── Filter & render tabel ───────────────────────────────── */
+function filterData(filter, btn) {
+  if (btn) {
+    filterAktif = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  filterTim = document.getElementById('filter-tim')?.value || '';
+
+  let rows = monRows;
+  if (filterAktif === 'sudah') rows = rows.filter(r => r.sudah);
+  if (filterAktif === 'belum') rows = rows.filter(r => !r.sudah);
+  if (filterTim)               rows = rows.filter(r => r.ruangan === filterTim);
+
+  renderTabel(rows);
+}
+
+function renderTabel(rows) {
+  const tbody = document.getElementById('tbody-mon');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Tidak ada data</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:0.8125rem;">${i + 1}</td>
+      <td style="font-weight:600;">${escHtml(r.nama)}</td>
+      <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.satker || '')}</td>
+      <td style="font-size:0.8125rem;color:var(--text-secondary);">${escHtml(r.ruangan || '—')}</td>
+      <td>${r.sudah
+        ? '<span class="badge badge-sudah">Sudah</span>'
+        : '<span class="badge badge-belum">Belum</span>'}</td>
+    </tr>`).join('');
+}
+
+/* ── State ───────────────────────────────────────────────── */
+function tampilState(state) {
+  document.getElementById('state-pilih').style.display = state === 'pilih' ? '' : 'none';
+  document.getElementById('state-kosong').style.display = state === 'kosong' ? '' : 'none';
+  document.getElementById('state-data').style.display  = state === 'data'  ? '' : 'none';
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function refresh() {
+  if (!currentChallengeId) return;
+  await muatData(currentChallengeId);
+}
+
+/* ── Auto-refresh ────────────────────────────────────────── */
+function mulaiAutoRefresh() {
+  stopAutoRefresh();
+  document.getElementById('refresh-label').textContent = 'Auto-refresh setiap 60 detik';
+  document.querySelector('.refresh-dot').style.background = '#16a34a';
+  document.querySelector('.refresh-dot').style.animation  = 'pulse 2s infinite';
+
+  autoRefreshTimer = setInterval(async () => {
+    if (currentChallengeId) await muatData(currentChallengeId);
+  }, 60000);
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+}
+
+</script>
+</body>
+</html>

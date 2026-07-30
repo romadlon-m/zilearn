@@ -378,14 +378,8 @@
   let timSortKey      = 'skor';
   let timSortAsc      = false;
 
-  // Hardcode sementara — ganti query Supabase saat data pegawai lengkap
-  const TOTAL_PER_RUANGAN = {
-    'Umum Atas'   : 10,
-    'Umum Bawah'  : 10,
-    'Sosis Sones' : 8,
-    'PDKT'        : 8,
-    'Petis Manis' : 6,
-  };
+  // Diisi dinamis dari Supabase saat init
+  let TOTAL_PER_RUANGAN = {};
 
   /* ── Helpers ── */
 
@@ -667,6 +661,19 @@
     }
 
     try {
+      // Ambil total pegawai per ruangan dari Supabase (satker 1900)
+      const { data: pegawaiData } = await db
+        .from('pegawai')
+        .select('ruangan')
+        .eq('satker', '1900')
+        .not('ruangan', 'is', null);
+      if (pegawaiData) {
+        pegawaiData.forEach(p => {
+          if (!p.ruangan) return;
+          TOTAL_PER_RUANGAN[p.ruangan] = (TOTAL_PER_RUANGAN[p.ruangan] || 0) + 1;
+        });
+      }
+
       // Auto-close challenge yang sudah lewat window sebelum fetch
       await autoTutupChallengeExpired();
 
