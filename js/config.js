@@ -115,32 +115,58 @@ function getInisial(nama) {
 }
 
 /* ── Helper: parse CSV dari Google Sheets ────────────────── */
+// Menggunakan parsing karakter-per-karakter (RFC 4180 compliant) agar
+// field dengan newline di dalam quotes (misal kolom pembahasan) tidak
+// memotong baris lebih awal dan menyebabkan soal hilang.
 function parseCSV(text) {
-  const lines  = text.trim().split('\n');
-  const header = parseCSVRow(lines[0]);
-  return lines.slice(1).map(line => {
-    const vals = parseCSVRow(line);
-    const obj  = {};
-    header.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+  const rows = parseCSVAll(text.trim());
+  if (rows.length < 2) return [];
+  const header = rows[0].map(h => h.trim());
+  return rows.slice(1).map(row => {
+    const obj = {};
+    header.forEach((h, i) => obj[h] = (row[i] || '').trim());
     return obj;
   }).filter(r => Object.values(r).some(v => v));
 }
 
-function parseCSVRow(row) {
-  const result = [];
-  let current  = '';
+// Parsing seluruh teks CSV sekaligus — tidak pre-split per baris,
+// sehingga newline di dalam quoted field diperlakukan sebagai konten biasa.
+function parseCSVAll(text) {
+  const rows = [];
+  let row = [];
+  let current = '';
   let inQuotes = false;
-  for (let i = 0; i < row.length; i++) {
-    const ch = row[i];
+
+  for (let i = 0; i < text.length; i++) {
+    const ch   = text[i];
+    const next = text[i + 1];
+
     if (ch === '"') {
-      if (inQuotes && row[i + 1] === '"') { current += '"'; i++; }
-      else inQuotes = !inQuotes;
+      if (inQuotes && next === '"') {
+        // escaped quote ("") → satu karakter "
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
     } else if (ch === ',' && !inQuotes) {
-      result.push(current); current = '';
+      row.push(current);
+      current = '';
+    } else if ((ch === '\n' || (ch === '\r' && next === '\n')) && !inQuotes) {
+      // akhir baris — hanya jika tidak di dalam quoted field
+      if (ch === '\r') i++; // lewati \n dari pasangan \r\n
+      row.push(current);
+      current = '';
+      rows.push(row);
+      row = [];
     } else {
       current += ch;
     }
   }
-  result.push(current);
-  return result;
+
+  // baris terakhir tanpa trailing newline
+  row.push(current);
+  if (row.some(v => v !== '')) rows.push(row);
+
+  return rows;
 }
