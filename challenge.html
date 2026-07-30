@@ -47,12 +47,6 @@
       margin-bottom:1rem; font-size:0.8125rem; color:#78350f; line-height:1.55;
     }
     .sudah-skor { font-size:4rem; font-weight:700; line-height:1; margin-bottom:6px; }
-    .countdown-badge {
-      display:none; align-items:center; gap:5px; font-size:0.75rem; font-weight:600;
-      color:var(--muted); background:var(--surface); border:1.5px solid var(--border);
-      border-radius:99px; padding:2px 10px;
-    }
-    .countdown-badge svg { opacity:0.6; }
   </style>
 </head>
 <body>
@@ -151,15 +145,7 @@
           <button id="btn-retry" class="btn btn-outline" style="font-size:0.8125rem;padding:4px 14px;color:#991b1b;border-color:#fca5a5;flex-shrink:0;">Coba Lagi</button>
         </div>
         <div class="card" style="margin-bottom:1rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div class="soal-nomor" id="soal-nomor" style="margin-bottom:0;"></div>
-            <div class="countdown-badge" id="countdown-badge">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-              </svg>
-              <span id="countdown-angka">5</span>
-            </div>
-          </div>
+          <div class="soal-nomor" id="soal-nomor"></div>
           <div class="soal-teks" id="soal-teks"></div>
           <div id="opsi-container"></div>
           <div class="pembahasan-box" id="pembahasan-box">
@@ -214,10 +200,7 @@ let soalAktif       = 0;
 let jawaban         = [];
 let sesiPegawai     = null;
 let challengeAktif  = null;
-let soalMulai       = 0;
-let countdownTimer  = null;
 let sedangLanjut    = false;
-const BACA_DETIK    = 5;
 
 (async () => {
   await loadSidebar('challenge');
@@ -502,34 +485,10 @@ function renderSoal() {
     btn.onclick = () => pilihJawaban(key, btn);
     opsiContainer.appendChild(btn);
   });
-
-  clearInterval(countdownTimer);
-  soalMulai = Date.now();
-  const semuaOpsi = opsiContainer.querySelectorAll('.quiz-option');
-  semuaOpsi.forEach(b => { b.disabled = true; b.style.opacity = '0.55'; b.style.cursor = 'default'; });
-
-  const badgeEl = document.getElementById('countdown-badge');
-  const angkaEl = document.getElementById('countdown-angka');
-  let sisaDetik = BACA_DETIK;
-  angkaEl.textContent    = sisaDetik;
-  badgeEl.style.display  = 'inline-flex';
-
-  countdownTimer = setInterval(() => {
-    sisaDetik--;
-    if (sisaDetik <= 0) {
-      clearInterval(countdownTimer);
-      badgeEl.style.display = 'none';
-      opsiContainer.querySelectorAll('.quiz-option').forEach(b => {
-        b.disabled = false; b.style.opacity = ''; b.style.cursor = '';
-      });
-    } else { angkaEl.textContent = sisaDetik; }
-  }, 1000);
 }
 
 /* ── Pilih jawaban ───────────────────────────────────────── */
 function pilihJawaban(key, btnEl) {
-  clearInterval(countdownTimer);
-  document.getElementById('countdown-badge').style.display = 'none';
   const soal  = soalList[soalAktif];
   const benar = key === soal.jawaban;
   // FIX: pakai jumlah_soal konstan sebagai pembagi, bukan panjang array yang berubah
