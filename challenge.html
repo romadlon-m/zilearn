@@ -82,6 +82,7 @@
       <div id="state-sudah" style="display:none;">
         <div class="page-header"><h1 class="page-title">ZI Challenge</h1></div>
         <div class="card" style="text-align:center;padding:2.5rem 1.5rem;">
+          <div id="sudah-judul" style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);margin-bottom:1rem;"></div>
           <div class="sudah-skor" id="sudah-skor" style="color:var(--primary);">—</div>
           <div style="font-size:1rem;color:var(--text-secondary);margin-bottom:0.5rem;">dari 100</div>
           <p id="sudah-pesan" style="font-size:0.9375rem;color:var(--text-secondary);margin-bottom:1.5rem;max-width:420px;margin-left:auto;margin-right:auto;"></p>
@@ -268,6 +269,7 @@ async function muatChallenge() {
           const totalNilai = Math.min(100, Math.round(
             sudahAda.reduce((a, r) => a + (Number(r.nilai) || 0), 0)
           ));
+          document.getElementById('sudah-judul').textContent = challengeAktif.judul || '';
           document.getElementById('sudah-skor').textContent = totalNilai;
           document.getElementById('sudah-skor').style.color =
             totalNilai >= 80 ? 'var(--success)' : totalNilai >= 60 ? 'var(--warning)' : 'var(--danger)';
