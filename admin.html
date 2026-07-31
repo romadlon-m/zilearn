@@ -994,15 +994,21 @@ function renderLbAdmin(rows) {
     return;
   }
 
+  const chalSel    = allChallenges.find(c => String(c.id) === String(challengeId));
+  const isMultiHari = !!(chalSel?.tanggal_tutup && chalSel.tanggal_tutup !== chalSel.tanggal);
+
   const medal = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
   const fmtWaktu = ts => {
     if (!ts) return '—';
     // Supabase waktu UTC → tampilkan WIB (UTC+7)
-    const d = new Date(ts);
+    const d   = new Date(ts);
     const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
     const hh  = String(wib.getUTCHours()).padStart(2,'0');
     const mm  = String(wib.getUTCMinutes()).padStart(2,'0');
-    return `${hh}:${mm} WIB`;
+    if (!isMultiHari) return `${hh}:${mm} WIB`;
+    const tgl = String(wib.getUTCDate()).padStart(2,'0');
+    const bln = String(wib.getUTCMonth() + 1).padStart(2,'0');
+    return `${tgl}/${bln} ${hh}:${mm} WIB`;
   };
   document.getElementById('tbody-lb-admin').innerHTML = rows.map((r, i) => `
     <tr>

@@ -496,12 +496,15 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function formatWaktuSubmit(ts) {
+  function formatWaktuSubmit(ts, isMultiHari = false) {
     if (!ts) return '';
-    const d = new Date(ts);
+    const d   = new Date(ts);
     const jam = String(d.getHours()).padStart(2,'0');
     const mnt = String(d.getMinutes()).padStart(2,'0');
-    return `${jam}:${mnt}`;
+    if (!isMultiHari) return `${jam}:${mnt}`;
+    const tgl = String(d.getDate()).padStart(2,'0');
+    const bln = String(d.getMonth() + 1).padStart(2,'0');
+    return `${tgl}/${bln} ${jam}:${mnt}`;
   }
 
   function countUp(elId, target, duration) {
@@ -642,6 +645,9 @@
 
     tampilState('hasil');
 
+    // Deteksi multi-hari: tanggal_tutup berbeda dari tanggal buka
+    const isMultiHari = !!(challenge.tanggal_tutup && challenge.tanggal_tutup !== challenge.tanggal);
+
     // Stat cards — Nilai Tertinggi & Rata-rata selalu dari individu
     const nilaiList = rows.map(r => r.nilai);
     const maxVal    = Math.max(...nilaiList);
@@ -678,7 +684,7 @@
         document.getElementById(`p${n}-meta`).textContent = row.ruangan || '';
         const scoreEl = document.getElementById(`p${n}-score`);
         if (nilaiCount[row.nilai] > 1 && row.waktu_submit) {
-          scoreEl.innerHTML = `${row.nilai}<span class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit)}</span>`;
+          scoreEl.innerHTML = `${row.nilai}<span class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit, isMultiHari)}</span>`;
         } else {
           scoreEl.textContent = row.nilai;
         }
@@ -697,7 +703,7 @@
       const rank    = i + 4;
       const hasTie  = allNilaiCount[row.nilai] > 1;
       const scoreEl = hasTie && row.waktu_submit
-        ? `<div class="rank-score-wrap"><div class="rank-score">${row.nilai}</div><div class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit)}</div></div>`
+        ? `<div class="rank-score-wrap"><div class="rank-score">${row.nilai}</div><div class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit, isMultiHari)}</div></div>`
         : `<div class="rank-score">${row.nilai}</div>`;
 
       return `
