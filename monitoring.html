@@ -311,7 +311,7 @@ let autoRefreshTimer   = null;
     .select('id, nama, satker, ruangan, role')
     .order('nama', { ascending: true });
   if (ep) { console.error('Gagal fetch pegawai:', ep.message); }
-  else allPegawai = (peg || []).filter(p => p.role !== CONFIG.ROLE_ADMIN);
+  else allPegawai = peg || [];
 
   document.getElementById('loading').style.display    = 'none';
   document.getElementById('mon-content').style.display = '';
