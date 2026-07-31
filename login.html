@@ -164,11 +164,20 @@
       listEl.innerHTML = '<div class="nama-item-kosong">Tidak ditemukan</div>';
       return;
     }
+    // Nama disimpan di data-* attribute, BUKAN di inline JS handler.
+    // Ini aman untuk nama dengan karakter khusus seperti apostrof (Al'firdausi).
     listEl.innerHTML = list.map(p => `
-      <div class="nama-item" data-nip="${escLoginHtml(p.nip_suffix)}"
-        onmousedown="pilihNama('${escLoginHtml(p.nip_suffix)}', '${escLoginHtml(p.nama)}')">
+      <div class="nama-item"
+        data-nip="${escLoginHtml(p.nip_suffix)}"
+        data-nama="${escLoginHtml(p.nama)}">
         ${escLoginHtml(p.nama)}
       </div>`).join('');
+
+    listEl.querySelectorAll('.nama-item').forEach(el => {
+      el.addEventListener('mousedown', () => {
+        pilihNama(el.dataset.nip, el.dataset.nama);
+      });
+    });
   }
 
   function filterNama() {
