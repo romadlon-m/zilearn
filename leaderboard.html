@@ -252,9 +252,32 @@
     .lb-sparkle-sl   { animation: lb-sparkle 5s linear infinite reverse; transform-origin: 210px 168px; }
     .lb-sparkle-sr   { animation: lb-sparkle 5s linear infinite; transform-origin: 468px 190px; }
     .lb-shadow-pulse { animation: lb-pulse-shadow 3s ease-in-out infinite; }
+    /* ── Audio toggle ── */
+    .audio-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 999;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.125rem;
+      transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .audio-btn:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.18); transform: scale(1.08); }
   </style>
 </head>
 <body>
+  <audio id="lb-audio" src="assets/audio/leaderboard.mp3" loop preload="auto"></audio>
+  <button class="audio-btn" id="audio-btn" onclick="toggleAudio()" title="Musik"></button>
+
   <div class="app-layout">
     <div id="sidebar-placeholder"></div>
 
@@ -900,6 +923,38 @@
       tampilState('pilih');
     }
   })();
+
+
+  /* ── Audio ── */
+  const audio    = document.getElementById('lb-audio');
+  const audioBtn = document.getElementById('audio-btn');
+  let muted = localStorage.getItem('zi_audio_muted') === 'true';
+
+  function updateAudioBtn() {
+    audioBtn.textContent = muted ? '🔇' : '🔊';
+    audioBtn.title       = muted ? 'Aktifkan musik' : 'Matikan musik';
+  }
+
+  function toggleAudio() {
+    muted = !muted;
+    localStorage.setItem('zi_audio_muted', muted);
+    if (muted) { audio.pause(); }
+    else { audio.play().catch(() => {}); }
+    updateAudioBtn();
+  }
+
+  window.addEventListener('load', () => {
+    updateAudioBtn();
+    if (!muted) {
+      audio.volume = 0.4;
+      audio.play().catch(() => {
+        // Browser blokir autoplay — tunggu interaksi pertama
+        document.addEventListener('click', () => {
+          if (!muted) audio.play().catch(() => {});
+        }, { once: true });
+      });
+    }
+  });
 
   </script>
 </body>
