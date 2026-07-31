@@ -1013,9 +1013,8 @@ function renderLbAdmin(rows, challengeId) {
     const hh  = String(wib.getUTCHours()).padStart(2,'0');
     const mm  = String(wib.getUTCMinutes()).padStart(2,'0');
     if (!isMultiHari) return `${hh}:${mm} WIB`;
-    const tgl = String(wib.getUTCDate()).padStart(2,'0');
-    const bln = String(wib.getUTCMonth() + 1).padStart(2,'0');
-    return `${tgl}/${bln} ${hh}:${mm} WIB`;
+    const tgl = wib.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
+    return `${tgl} ${hh}:${mm} WIB`;
   };
   document.getElementById('tbody-lb-admin').innerHTML = rows.map((r, i) => `
     <tr>

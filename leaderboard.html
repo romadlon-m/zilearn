@@ -502,9 +502,8 @@
     const jam = String(d.getHours()).padStart(2,'0');
     const mnt = String(d.getMinutes()).padStart(2,'0');
     if (!isMultiHari) return `${jam}:${mnt}`;
-    const tgl = String(d.getDate()).padStart(2,'0');
-    const bln = String(d.getMonth() + 1).padStart(2,'0');
-    return `${tgl}/${bln} ${jam}:${mnt}`;
+    const tgl = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
+    return `${tgl} ${jam}:${mnt}`;
   }
 
   function countUp(elId, target, duration) {
@@ -880,7 +879,7 @@
     aktifList.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = `${labelChallenge(c)} (${formatTanggal(c.tanggal)}) 🟢`;
+      opt.textContent = `${labelChallenge(c)} (${formatTanggal(c.tanggal)}${c.tanggal_tutup && c.tanggal_tutup !== c.tanggal ? ' – ' + formatTanggal(c.tanggal_tutup) : ''}) 🟢`;
       select.appendChild(opt);
     });
 
@@ -888,7 +887,7 @@
     selesaiList.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = labelChallenge(c) + ` (${formatTanggal(c.tanggal)})`;
+      opt.textContent = labelChallenge(c) + ` (${formatTanggal(c.tanggal)}${c.tanggal_tutup && c.tanggal_tutup !== c.tanggal ? ' – ' + formatTanggal(c.tanggal_tutup) : ''})`;
       select.appendChild(opt);
     });
 
