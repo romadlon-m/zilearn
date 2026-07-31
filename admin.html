@@ -484,11 +484,18 @@ function showModalAlert(pesan, tipe) {
   el.style.display = 'block';
 }
 
+function labelChallenge(c) {
+  const tglBuka  = formatTanggal(c.tanggal);
+  const tglTutup = c.tanggal_tutup && c.tanggal_tutup !== c.tanggal
+    ? ` – ${formatTanggal(c.tanggal_tutup)}` : '';
+  return `${c.judul} (${tglBuka}${tglTutup})`;
+}
+
 function isiDropdown() {
   const selPart = document.getElementById('part-select');
   const selLb   = document.getElementById('lb-select');
   allChallenges.forEach(c => {
-    const label = `${c.judul} (${formatTanggal(c.tanggal)})`;
+    const label = labelChallenge(c);
     [selPart, selLb].forEach(sel => {
       const o = document.createElement('option');
       o.value = c.id; o.textContent = label;
@@ -677,7 +684,7 @@ async function simpanChallenge() {
     if (idx !== -1) allChallenges[idx] = data;
     renderChallengeTable();
     // Update label di dropdown
-    const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
+    const label = labelChallenge(data);
     ['part-select','lb-select'].forEach(selId => {
       const sel = document.getElementById(selId);
       const opt = [...sel.options].find(o => String(o.value) === String(data.id));
@@ -692,7 +699,7 @@ async function simpanChallenge() {
     if (error) { showModalAlert('Gagal menyimpan: ' + error.message, 'error'); return; }
     allChallenges.unshift(data);
     renderChallengeTable();
-    const label = `${data.judul} (${formatTanggal(data.tanggal)})`;
+    const label = labelChallenge(data);
     ['part-select','lb-select'].forEach(selId => {
       const o = document.createElement('option');
       o.value = data.id; o.textContent = label;
@@ -944,7 +951,7 @@ async function muatLbAdmin(challengeId) {
   tampilLbEmpty();
   if (!challengeId) return;
 
-  if (lbCache[challengeId]) { renderLbAdmin(lbCache[challengeId]); return; }
+  if (lbCache[challengeId]) { renderLbAdmin(lbCache[challengeId], challengeId); return; }
 
   const { data, error } = await db
     .from('riwayat_kuis')
@@ -982,10 +989,10 @@ async function muatLbAdmin(challengeId) {
   if (!includeAdmin) result = result.filter(r => r.role !== 'admin');
   result.sort((a,b) => b.nilai - a.nilai || a.waktu_submit - b.waktu_submit);
   lbCache[challengeId] = result;
-  renderLbAdmin(result);
+  renderLbAdmin(result, challengeId);
 }
 
-function renderLbAdmin(rows) {
+function renderLbAdmin(rows, challengeId) {
   if (!rows.length) {
     document.getElementById('tb-lb-admin').innerHTML =
       '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">Belum ada peserta</td></tr>';
