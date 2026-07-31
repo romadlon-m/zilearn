@@ -211,6 +211,47 @@
 
     /* ── Catatan kecil di stat card ── */
     .stat-note { font-size:0.6875rem; color:var(--muted); margin-top:3px; font-style:italic; }
+
+    /* ── Empty state aktif (trofi + pesan) ── */
+    .lb-empty-aktif {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 2.5rem;
+      text-align: center;
+    }
+    .lb-empty-aktif svg { margin-bottom: 1.25rem; }
+    .lb-empty-aktif-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .lb-empty-aktif-sub {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+      max-width: 420px;
+      line-height: 1.6;
+    }
+    @keyframes lb-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+    @keyframes lb-sparkle {
+      0%, 100% { transform: rotate(0deg) scale(1); opacity: 0.6; }
+      50%       { transform: rotate(180deg) scale(1.2); opacity: 1; }
+    }
+    @keyframes lb-pulse-shadow {
+      0%, 100% { opacity: 0.25; }
+      50%       { opacity: 0.5; }
+    }
+    .lb-trophy-float { animation: lb-float 3s ease-in-out infinite; }
+    .lb-sparkle-l    { animation: lb-sparkle 4s linear infinite; transform-origin: 242px 108px; }
+    .lb-sparkle-r    { animation: lb-sparkle 4s linear infinite reverse; transform-origin: 440px 120px; }
+    .lb-sparkle-sl   { animation: lb-sparkle 5s linear infinite reverse; transform-origin: 210px 168px; }
+    .lb-sparkle-sr   { animation: lb-sparkle 5s linear infinite; transform-origin: 468px 190px; }
+    .lb-shadow-pulse { animation: lb-pulse-shadow 3s ease-in-out infinite; }
   </style>
 </head>
 <body>
@@ -255,10 +296,67 @@
           <div class="empty-state-title">Pilih challenge untuk melihat hasil</div>
           <div class="empty-state-sub">Dropdown di atas menampilkan challenge yang sudah selesai</div>
         </div>
-        <div id="state-kosong" class="empty-state" style="display:none;">
-          <div class="empty-state-icon">📭</div>
-          <div class="empty-state-title">Belum ada challenge yang selesai</div>
-          <div class="empty-state-sub">Leaderboard akan tersedia setelah periode Challenge pertama ditutup</div>
+
+        <!-- State: belum ada challenge selesai sama sekali -->
+        <div id="state-kosong" class="lb-empty-aktif" style="display:none;">
+          <svg width="280" height="220" viewBox="0 0 680 320" role="img">
+            <title>Leaderboard belum tersedia</title>
+            <desc>Ilustrasi trofi dengan tanda tanya</desc>
+            <ellipse cx="340" cy="272" rx="52" ry="10" fill="#d97706" class="lb-shadow-pulse"/>
+            <g class="lb-trophy-float">
+              <path d="M296 180 Q296 220 340 228 Q384 220 384 180 L384 130 L296 130 Z" fill="#f59e0b" opacity="0.9"/>
+              <path d="M305 138 Q305 170 330 178" fill="none" stroke="#fde68a" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+              <rect x="324" y="228" width="32" height="20" rx="2" fill="#d97706"/>
+              <rect x="312" y="248" width="56" height="10" rx="4" fill="#b45309"/>
+              <path d="M296 148 Q268 148 268 170 Q268 192 296 192" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+              <path d="M384 148 Q412 148 412 170 Q412 192 384 192" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+              <text x="340" y="202" text-anchor="middle" font-size="44" font-weight="700" fill="#7c3200" font-family="sans-serif" opacity="0.8">?</text>
+            </g>
+            <g class="lb-sparkle-l"><path d="M242 98 L244 105 L251 105 L246 110 L248 117 L242 113 L236 117 L238 110 L233 105 L240 105 Z" fill="#f59e0b" opacity="0.7"/></g>
+            <g class="lb-sparkle-r"><path d="M440 112 L442 118 L448 118 L443 122 L445 128 L440 124 L435 128 L437 122 L432 118 L438 118 Z" fill="#f59e0b" opacity="0.6"/></g>
+            <g class="lb-sparkle-sl"><path d="M210 162 L211.5 167 L217 167 L213 170 L214.5 175 L210 172 L205.5 175 L207 170 L203 167 L208.5 167 Z" fill="#fbbf24" opacity="0.45"/></g>
+            <g class="lb-sparkle-sr"><path d="M468 184 L469.5 189 L475 189 L471 192 L472.5 197 L468 194 L463.5 197 L465 192 L461 189 L466.5 189 Z" fill="#fbbf24" opacity="0.45"/></g>
+            <rect x="306" y="286" width="68" height="22" rx="3" fill="#f59e0b" opacity="0.2"/>
+            <text x="340" y="302" text-anchor="middle" font-size="11" fill="#92400e" font-family="sans-serif" opacity="0.6">1</text>
+            <rect x="224" y="294" width="68" height="14" rx="3" fill="#9ca3af" opacity="0.15"/>
+            <text x="258" y="305" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif" opacity="0.6">2</text>
+            <rect x="388" y="298" width="68" height="10" rx="3" fill="#cd7c2f" opacity="0.15"/>
+            <text x="422" y="307" text-anchor="middle" font-size="11" fill="#92400e" font-family="sans-serif" opacity="0.6">3</text>
+          </svg>
+          <div class="lb-empty-aktif-title">Leaderboard belum tersedia</div>
+          <div class="lb-empty-aktif-sub">Leaderboard akan tersedia setelah periode Challenge pertama ditutup.</div>
+          <a href="monitoring.html" class="btn btn-primary">Lihat Monitoring</a>
+        </div>
+
+        <!-- State: challenge aktif dipilih dari dropdown -->
+        <div id="state-aktif" class="lb-empty-aktif" style="display:none;">
+          <svg width="280" height="220" viewBox="0 0 680 320" role="img">
+            <title>Challenge sedang berlangsung</title>
+            <desc>Ilustrasi trofi dengan tanda tanya</desc>
+            <ellipse cx="340" cy="272" rx="52" ry="10" fill="#d97706" class="lb-shadow-pulse"/>
+            <g class="lb-trophy-float">
+              <path d="M296 180 Q296 220 340 228 Q384 220 384 180 L384 130 L296 130 Z" fill="#f59e0b" opacity="0.9"/>
+              <path d="M305 138 Q305 170 330 178" fill="none" stroke="#fde68a" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+              <rect x="324" y="228" width="32" height="20" rx="2" fill="#d97706"/>
+              <rect x="312" y="248" width="56" height="10" rx="4" fill="#b45309"/>
+              <path d="M296 148 Q268 148 268 170 Q268 192 296 192" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+              <path d="M384 148 Q412 148 412 170 Q412 192 384 192" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round"/>
+              <text x="340" y="202" text-anchor="middle" font-size="44" font-weight="700" fill="#7c3200" font-family="sans-serif" opacity="0.8">?</text>
+            </g>
+            <g class="lb-sparkle-l"><path d="M242 98 L244 105 L251 105 L246 110 L248 117 L242 113 L236 117 L238 110 L233 105 L240 105 Z" fill="#f59e0b" opacity="0.7"/></g>
+            <g class="lb-sparkle-r"><path d="M440 112 L442 118 L448 118 L443 122 L445 128 L440 124 L435 128 L437 122 L432 118 L438 118 Z" fill="#f59e0b" opacity="0.6"/></g>
+            <g class="lb-sparkle-sl"><path d="M210 162 L211.5 167 L217 167 L213 170 L214.5 175 L210 172 L205.5 175 L207 170 L203 167 L208.5 167 Z" fill="#fbbf24" opacity="0.45"/></g>
+            <g class="lb-sparkle-sr"><path d="M468 184 L469.5 189 L475 189 L471 192 L472.5 197 L468 194 L463.5 197 L465 192 L461 189 L466.5 189 Z" fill="#fbbf24" opacity="0.45"/></g>
+            <rect x="306" y="286" width="68" height="22" rx="3" fill="#f59e0b" opacity="0.2"/>
+            <text x="340" y="302" text-anchor="middle" font-size="11" fill="#92400e" font-family="sans-serif" opacity="0.6">1</text>
+            <rect x="224" y="294" width="68" height="14" rx="3" fill="#9ca3af" opacity="0.15"/>
+            <text x="258" y="305" text-anchor="middle" font-size="11" fill="#6b7280" font-family="sans-serif" opacity="0.6">2</text>
+            <rect x="388" y="298" width="68" height="10" rx="3" fill="#cd7c2f" opacity="0.15"/>
+            <text x="422" y="307" text-anchor="middle" font-size="11" fill="#92400e" font-family="sans-serif" opacity="0.6">3</text>
+          </svg>
+          <div class="lb-empty-aktif-title">Challenge sedang berlangsung</div>
+          <div class="lb-empty-aktif-sub" id="state-aktif-sub">Leaderboard akan dibuka setelah periode ditutup. Sambil menunggu, cek siapa yang sudah ikut!</div>
+          <a href="monitoring.html" class="btn btn-primary">Lihat Monitoring</a>
         </div>
 
         <div id="state-hasil" style="display:none;">
@@ -444,6 +542,24 @@
   async function pilihChallenge(challengeId) {
     tampilState('pilih');
     if (!challengeId) return;
+
+    // Cek apakah challenge yang dipilih adalah Aktif
+    const cAktif = allChallenges.find(x =>
+      String(x.id) === String(challengeId) &&
+      (x.status||'').toLowerCase() === 'aktif'
+    );
+    if (cAktif) {
+      // Tampilkan state aktif dengan info tanggal tutup
+      const tutupTgl = cAktif.tanggal_tutup || cAktif.tanggal;
+      const tutupJam = (cAktif.jam_tutup || '23:59').slice(0, 5);
+      const subEl    = document.getElementById('state-aktif-sub');
+      if (subEl && tutupTgl) {
+        subEl.textContent =
+          `Leaderboard akan dibuka pada ${formatTanggal(tutupTgl)} pukul ${tutupJam} WIB. Sambil menunggu, cek siapa yang sudah ikut!`;
+      }
+      tampilState('aktif');
+      return;
+    }
     // challengeId bisa string (dari onchange) atau integer (dari direct call) — normalisasi ke string
     const c = selesaiList.find(x => String(x.id) === String(challengeId));
     if (!c) return;
@@ -675,7 +791,8 @@
   function tampilState(state) {
     document.getElementById('state-pilih').style.display  = state === 'pilih'  ? '' : 'none';
     document.getElementById('state-kosong').style.display = state === 'kosong' ? '' : 'none';
-    document.getElementById('state-hasil').style.display  = state === 'hasil'  ? '' : 'none';
+    document.getElementById('state-aktif').style.display  = state === 'aktif'  ? '' : 'none';
+    document.getElementById('state-hasil').style.display  = (state === 'hasil' || state === 'loading-inline') ? '' : 'none';
     if (state === 'loading-inline') {
       document.getElementById('state-hasil').style.display       = '';
       document.getElementById('lb-highlight').style.display      = 'none';
@@ -744,14 +861,24 @@
     }
 
     selesaiList = allChallenges.filter(c => (c.status||'').toLowerCase() === 'selesai');
+    const aktifList = allChallenges.filter(c => (c.status||'').toLowerCase() === 'aktif');
 
-    
     document.getElementById('loading').style.display    = 'none';
     document.getElementById('lb-content').style.display = '';
 
-    if (!selesaiList.length) { tampilState('kosong'); return; }
+    if (!selesaiList.length && !aktifList.length) { tampilState('kosong'); return; }
 
     const select = document.getElementById('challenge-select');
+
+    // Aktif di atas, ditandai 🟢
+    aktifList.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${labelChallenge(c)} (${formatTanggal(c.tanggal)}) 🟢`;
+      select.appendChild(opt);
+    });
+
+    // Selesai di bawah
     selesaiList.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
@@ -759,9 +886,14 @@
       select.appendChild(opt);
     });
 
-    const latest = selesaiList[selesaiList.length - 1];
-    select.value = latest.id;
-    pilihChallenge(latest.id);
+    // Default: Aktif kalau ada, kalau tidak → Selesai terbaru
+    const defaultC = aktifList[0] || selesaiList[selesaiList.length - 1];
+    if (defaultC) {
+      select.value = defaultC.id;
+      pilihChallenge(defaultC.id);
+    } else {
+      tampilState('pilih');
+    }
   })();
 
   </script>
