@@ -481,7 +481,8 @@
               </table>
             </div>
             <p style="font-size:0.8125rem;color:var(--muted);margin-top:0.75rem;">
-              * Skor Tim = rata-rata nilai × persentase partisipasi. Klik header untuk mengurutkan.
+              * Skor Tim = rata-rata nilai × persentase partisipasi. Klik header untuk mengurutkan.<br>
+              * Untuk tim dengan skor sama, tim yang lebih cepat mencapai 100% partisipasi menang.
             </p>
           </div>
 
@@ -622,9 +623,10 @@
 
       // Tim: semua termasuk admin — untuk hitung partisipasi & rata-rata per ruangan
       if (!byPegawaiTim[pid]) {
-        byPegawaiTim[pid] = { ruangan: profil.ruangan || '', nilai: 0 };
+        byPegawaiTim[pid] = { ruangan: profil.ruangan || '', nilai: 0, waktu: 0 };
       }
       byPegawaiTim[pid].nilai += n;
+      if (ts > byPegawaiTim[pid].waktu) byPegawaiTim[pid].waktu = ts;
 
       // Individu: exclude admin
       if (isAdmin) return;
@@ -758,7 +760,11 @@
         const rata            = values.reduce((a,b)=>a+b,0) / ikut;
         const partisipasi_pct = total ? (ikut/total)*100 : 100;
         const skor            = rata * (partisipasi_pct/100);
-        return { ruangan:room, ikut, total, rata, partisipasi_pct, skor };
+        // waktu_terakhir = submit anggota terakhir (tim tuntas saat semua selesai)
+        const waktu_terakhir  = Math.max(...Object.values(byPegawaiTim)
+          .filter(p => p.ruangan === room)
+          .map(p => p.waktu || 0));
+        return { ruangan:room, ikut, total, rata, partisipasi_pct, skor, waktu_terakhir };
       });
       timSortKey = 'skor'; timSortAsc = false;
       renderTimTable();
@@ -781,7 +787,12 @@
   function renderTimTable() {
     const sorted = [...cachedTimRows].sort((a,b) => {
       const diff = a[timSortKey] - b[timSortKey];
-      return timSortAsc ? diff : -diff;
+      if (diff !== 0) return timSortAsc ? diff : -diff;
+      // Tie-breaker: hanya kalau skor sama DAN keduanya 100%
+      if (timSortKey === 'skor' && a.partisipasi_pct === 100 && b.partisipasi_pct === 100) {
+        return a.waktu_terakhir - b.waktu_terakhir; // lebih awal menang
+      }
+      return 0;
     });
 
     ['skor','rata','partisipasi_pct'].forEach(k => {
@@ -799,8 +810,15 @@
       const medal    = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
       const rowClass = rank <= 3 ? ` class="rank-${rank}-row"` : '';
       const bar      = rank <= 3 ? `<td class="rank-bar" style="background:${barColor[rank-1]};"></td>` : `<td class="rank-bar"></td>`;
-      const partStr  = row.total
-        ? `${row.ikut}/${row.total} <span style="color:var(--muted);">(${row.partisipasi_pct.toFixed(0)}%)</span>`
+      const partStr = row.total
+        ? (() => {
+            const pctStr = `${row.ikut}/${row.total} <span style="color:var(--muted);">(${row.partisipasi_pct.toFixed(0)}%)</span>`;
+            if (row.partisipasi_pct >= 100 && row.waktu_terakhir) {
+              const wLabel = formatWaktuSubmit(row.waktu_terakhir, isMultiHari);
+              return `${pctStr}<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">⏱ ${wLabel}</div>`;
+            }
+            return pctStr;
+          })()
         : `${row.ikut}/<span style="color:var(--muted);">?</span>`;
       return `
         <tr${rowClass} style="animation-delay:${i*0.04}s">
@@ -945,14 +963,20 @@
 
   window.addEventListener('load', () => {
     updateAudioBtn();
+    const dariInternal = sessionStorage.getItem('zi_nav_internal') === 'true';
+    sessionStorage.removeItem('zi_nav_internal'); // hapus flag setelah dibaca
+
     if (!muted) {
       audio.volume = 0.4;
-      audio.play().catch(() => {
-        // Browser blokir autoplay — tunggu interaksi pertama
+      if (dariInternal) {
+        // Klik dari sidebar — langsung play
+        audio.play().catch(() => {});
+      } else {
+        // Buka dari URL langsung / WA — tunggu interaksi pertama
         document.addEventListener('click', () => {
           if (!muted) audio.play().catch(() => {});
         }, { once: true });
-      });
+      }
     }
   });
 
