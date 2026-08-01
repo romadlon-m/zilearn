@@ -267,7 +267,7 @@
         </div>
 
         <div id="lb-admin-hasil" style="display:none;">
-          <div class="card" style="padding:0;overflow:hidden;">
+          <div class="card" style="padding:0;overflow-x:auto;max-height:60vh;overflow-y:auto;">
             <table class="admin-table">
               <thead>
                 <tr>
@@ -280,6 +280,30 @@
               </thead>
               <tbody id="tbody-lb-admin"></tbody>
             </table>
+          </div>
+
+          <!-- Section Tim -->
+          <div style="margin-top:1.5rem;">
+            <div style="font-size:0.8125rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">
+              Leaderboard Tim (Preview)
+            </div>
+            <div class="card" style="padding:0;overflow-x:auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th style="width:44px;text-align:center;">#</th>
+                    <th>Ruangan</th>
+                    <th>Skor Tim</th>
+                    <th>Rata-rata</th>
+                    <th>Partisipasi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-lb-tim"></tbody>
+              </table>
+            </div>
+            <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">
+              * Preview — data berubah selama challenge berlangsung. Skor Tim = rata-rata × partisipasi%.
+            </p>
           </div>
         </div>
       </div>
@@ -1030,6 +1054,55 @@ function renderLbAdmin(rows, challengeId) {
 
   document.getElementById('lb-admin-hasil').style.display = '';
   document.getElementById('lb-admin-empty').style.display = 'none';
+
+  // ── Leaderboard Tim ──
+  const TOTAL_PER_RUANGAN = {};
+  allPegawai.filter(p => p.satker === '1900' && p.ruangan).forEach(p => {
+    TOTAL_PER_RUANGAN[p.ruangan] = (TOTAL_PER_RUANGAN[p.ruangan] || 0) + 1;
+  });
+
+  const byRuangan = {};
+  Object.values(byPeg).forEach(p => {
+    if (!p.ruangan) return;
+    if (!byRuangan[p.ruangan]) byRuangan[p.ruangan] = { values: [], waktu_terakhir: 0 };
+    byRuangan[p.ruangan].values.push(p.nilai);
+    if (p.waktu_submit > byRuangan[p.ruangan].waktu_terakhir)
+      byRuangan[p.ruangan].waktu_terakhir = p.waktu_submit;
+  });
+
+  const timRows = Object.entries(byRuangan).map(([room, d]) => {
+    const total           = TOTAL_PER_RUANGAN[room] || null;
+    const ikut            = d.values.length;
+    const rata            = d.values.reduce((a,b) => a+b, 0) / ikut;
+    const partisipasi_pct = total ? (ikut / total) * 100 : 100;
+    const skor            = rata * (partisipasi_pct / 100);
+    return { ruangan: room, ikut, total, rata, partisipasi_pct, skor, waktu_terakhir: d.waktu_terakhir };
+  }).sort((a, b) => {
+    const diff = b.skor - a.skor;
+    if (diff !== 0) return diff;
+    if (a.partisipasi_pct === 100 && b.partisipasi_pct === 100)
+      return a.waktu_terakhir - b.waktu_terakhir;
+    return 0;
+  });
+
+  const medalTim = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+  document.getElementById('tbody-lb-tim').innerHTML = timRows.length
+    ? timRows.map((row, i) => {
+        const partStr = row.total
+          ? `${row.ikut}/${row.total} (${row.partisipasi_pct.toFixed(0)}%)`
+          : `${row.ikut}/?`;
+        const waktuStr = row.partisipasi_pct >= 100 && row.waktu_terakhir
+          ? `<div style="font-size:0.75rem;color:var(--muted);">⏱ ${fmtWaktu(row.waktu_terakhir)}</div>` : '';
+        return `
+          <tr>
+            <td style="text-align:center;font-size:${i<3?'1.125':'0.875'}rem;">${medalTim(i+1)}</td>
+            <td style="font-weight:600;">${escHtml(row.ruangan)}</td>
+            <td style="font-weight:700;color:var(--primary);">${row.skor.toFixed(1)}</td>
+            <td style="color:var(--text-secondary);">${row.rata.toFixed(1)}</td>
+            <td style="font-size:0.8125rem;">${partStr}${waktuStr}</td>
+          </tr>`;
+      }).join('')
+    : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Belum ada data tim</td></tr>';
 }
 
 </script>
