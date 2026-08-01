@@ -1012,13 +1012,13 @@ async function muatLbAdmin(challengeId) {
   let result = Object.values(byPeg);
   if (!includeAdmin) result = result.filter(r => r.role !== 'admin');
   result.sort((a,b) => b.nilai - a.nilai || a.waktu_submit - b.waktu_submit);
-  lbCache[challengeId] = result;
-  renderLbAdmin(result, challengeId);
+  lbCache[challengeId] = { result, byPeg };
+  renderLbAdmin({ result, byPeg }, challengeId);
 }
 
-function renderLbAdmin(rows, challengeId) {
+function renderLbAdmin({ result: rows, byPeg }, challengeId) {
   if (!rows.length) {
-    document.getElementById('tb-lb-admin').innerHTML =
+    document.getElementById('tbody-lb-admin').innerHTML =
       '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">Belum ada peserta</td></tr>';
     document.getElementById('lb-admin-hasil').style.display = '';
     document.getElementById('lb-admin-empty').style.display = 'none';
