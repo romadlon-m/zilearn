@@ -452,7 +452,7 @@
           <div class="lb-summary">
             <div class="stat-card">
               <div class="stat-label">Peserta</div>
-              <div class="stat-value" id="stat-peserta">—</div>
+              <div class="stat-value" id="stat-peserta" style="font-size:clamp(1.25rem,3vw,2rem);">—</div>
               <div class="stat-sub">mengerjakan</div>
               <div class="stat-note" id="stat-peserta-note"></div>
             </div>
@@ -571,8 +571,9 @@
   let cachedPesertaTim      = 0;
   let isMultiHari           = false; // diset saat renderHasil, dipakai di renderTimTable
 
-  // Diisi dinamis dari Supabase saat init
-  let TOTAL_PER_RUANGAN = {};
+  let totalPegawaiIndividu = 0;
+  let totalPegawaiTim      = 0;
+  let TOTAL_PER_RUANGAN    = {};
 
   /* ── Helpers ── */
 
@@ -619,10 +620,12 @@
     // Update stat Peserta sesuai tab
     if (cachedPesertaIndividu > 0) {
       if (tab === 'individu') {
-        document.getElementById('stat-peserta').textContent      = cachedPesertaIndividu;
+        document.getElementById('stat-peserta').textContent      = totalPegawaiIndividu
+          ? `${cachedPesertaIndividu} / ${totalPegawaiIndividu}` : cachedPesertaIndividu;
         document.getElementById('stat-peserta-note').textContent = '* tidak termasuk admin';
       } else {
-        document.getElementById('stat-peserta').textContent      = cachedPesertaTim;
+        document.getElementById('stat-peserta').textContent      = totalPegawaiTim
+          ? `${cachedPesertaTim} / ${totalPegawaiTim}` : cachedPesertaTim;
         document.getElementById('stat-peserta-note').textContent = '* termasuk admin';
       }
     }
@@ -745,7 +748,9 @@
     // Peserta: default tampil individu dulu (tab aktif = Individu)
     cachedPesertaIndividu = rows.length;
     cachedPesertaTim      = rowsTim.length;
-    countUp('stat-peserta', cachedPesertaIndividu, 600);
+    const pesertaStr = totalPegawaiIndividu
+      ? `${cachedPesertaIndividu} / ${totalPegawaiIndividu}` : `${cachedPesertaIndividu}`;
+    document.getElementById('stat-peserta').textContent      = pesertaStr;
     document.getElementById('stat-peserta-note').textContent = '* tidak termasuk admin';
     countUp('stat-max', maxVal, 700);
     countUp('stat-avg', avgVal, 700);
@@ -932,18 +937,21 @@
     }
 
     try {
-      // Ambil total pegawai per ruangan dari Supabase (satker 1900)
-      const { data: pegawaiData } = await db
-        .from('pegawai')
-        .select('ruangan')
-        .eq('satker', '1900')
-        .not('ruangan', 'is', null);
-      if (pegawaiData) {
-        pegawaiData.forEach(p => {
-          if (!p.ruangan) return;
-          TOTAL_PER_RUANGAN[p.ruangan] = (TOTAL_PER_RUANGAN[p.ruangan] || 0) + 1;
-        });
-      }
+      // Ambil total pegawai per ruangan (satker 1900) + total semua pegawai
+      try {
+        const { data: pegawaiData } = await db
+          .from('pegawai')
+          .select('ruangan, role, satker');
+        if (pegawaiData) {
+          pegawaiData.forEach(p => {
+            if (p.satker === '1900' && p.ruangan) {
+              TOTAL_PER_RUANGAN[p.ruangan] = (TOTAL_PER_RUANGAN[p.ruangan] || 0) + 1;
+            }
+          });
+          totalPegawaiTim      = pegawaiData.length;
+          totalPegawaiIndividu = pegawaiData.filter(p => p.role !== CONFIG.ROLE_ADMIN).length;
+        }
+      } catch (e) { console.error('Gagal fetch pegawai:', e); }
 
       // Auto-close challenge yang sudah lewat window sebelum fetch
       await autoTutupChallengeExpired();
