@@ -775,7 +775,7 @@
         if (!row) { el.style.display='none'; return; }
         el.style.display = '';
         document.getElementById(`p${n}-nama`).textContent = row.nama_samaran;
-        document.getElementById(`p${n}-meta`).textContent = row.ruangan || '';
+        document.getElementById(`p${n}-meta`).textContent = '';
         const scoreEl = document.getElementById(`p${n}-score`);
         if (nilaiCount[row.nilai] > 1 && row.waktu_submit) {
           scoreEl.innerHTML = `${row.nilai}<span class="submit-time">⏱ ${formatWaktuSubmit(row.waktu_submit, isMultiHari)}</span>`;
@@ -805,7 +805,7 @@
           <div class="rank-num">${rank}</div>
           <div class="rank-info">
             <div class="rank-name">${escHtml(row.nama_samaran)}</div>
-            ${row.ruangan ? `<div class="rank-meta">${escHtml(row.ruangan)}</div>` : ''}
+            ${row.ruangan ? `` : ''}
           </div>
           ${scoreEl}
         </div>`;
