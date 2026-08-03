@@ -71,23 +71,47 @@
       .lb-summary .lb-highlight-card { grid-column: span 1; }
     }
 
-    /* ── Sticky tabs ── */
+    /* ── Tabs — pill style ── */
     .lb-tabs {
-      display:flex; gap:4px;
-      border-bottom:2px solid var(--border);
-      position:sticky; top:0; z-index:10;
-      background:var(--surface);
-      padding-top:6px; margin-top:-6px; margin-bottom:1.25rem;
+      display: flex; gap: 6px;
+      margin-bottom: 1.25rem;
+      padding: 4px;
+      background: var(--surface);
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      width: fit-content;
     }
     .lb-tab {
-      padding:0.5rem 1.25rem; font-size:0.875rem; font-weight:600;
-      color:var(--muted); cursor:pointer; border:none; background:none;
-      font-family:'Plus Jakarta Sans',sans-serif;
-      border-bottom:2px solid transparent; margin-bottom:-2px;
-      transition:color 0.15s,border-color 0.15s;
+      padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 600;
+      color: var(--muted); cursor: pointer; border: none;
+      background: transparent;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      border-radius: 7px;
+      transition: color 0.15s, background 0.15s;
+      display: flex; align-items: center; gap: 6px;
     }
-    .lb-tab:hover { color:var(--text); }
-    .lb-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+    .lb-tab:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+    .lb-tab.active {
+      color: #fff;
+      background: var(--primary);
+      box-shadow: 0 2px 8px rgba(230,126,34,0.3);
+    }
+    @media (max-width: 480px) {
+      .lb-tabs { width: 100%; }
+      .lb-tab  { flex: 1; justify-content: center; padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
+    }
+
+    /* ── Podium animasi via Intersection Observer ── */
+    .podium-animate-ready .podium-medal { animation: none; opacity: 0; transform: scale(0.4); }
+    .podium-animate-ready .podium-bar   { animation: none; opacity: 0; transform: scaleY(0); transform-origin: bottom; }
+    .podium-animated .podium-medal { animation: bounceMedal 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+    .podium-animated .podium-slot.p1 .podium-medal { animation-delay: 0.2s; }
+    .podium-animated .podium-slot.p2 .podium-medal { animation-delay: 0.35s; }
+    .podium-animated .podium-slot.p3 .podium-medal { animation-delay: 0.5s; }
+    .podium-animated .podium-bar { animation: growUp 0.45s ease both; }
+    .podium-animated .podium-slot.p1 .podium-bar { animation-delay: 0.05s; }
+    .podium-animated .podium-slot.p2 .podium-bar { animation-delay: 0.15s; }
+    .podium-animated .podium-slot.p3 .podium-bar { animation-delay: 0.25s; }
 
     /* ── Podium ── */
     .podium { display:grid; grid-template-columns:1fr 1fr 1fr; align-items:flex-end; gap:10px; margin-bottom:1.5rem; }
@@ -485,8 +509,14 @@
           </div>
 
           <div class="lb-tabs">
-            <button class="lb-tab active" onclick="gantiTab('individu',this)">Individu</button>
-            <button class="lb-tab"        onclick="gantiTab('ruangan',this)">Tim / Ruangan</button>
+            <button class="lb-tab active" onclick="gantiTab('individu',this)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Individu
+            </button>
+            <button class="lb-tab" onclick="gantiTab('ruangan',this)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Tim / Ruangan
+            </button>
           </div>
 
           <!-- Tab Individu -->
@@ -529,7 +559,7 @@
 
           <!-- Tab Tim -->
           <div id="tab-ruangan" style="display:none;">
-            <div class="card" style="padding:0;overflow:hidden;">
+            <div class="card" style="padding:0;overflow-x:auto;">
               <table class="lb-table">
                 <thead>
                   <tr>
@@ -786,7 +816,24 @@
       fill(1, rows[0]); fill(2, rows[1]); fill(3, rows[2] || null);
     }
 
-    // Rank list pos 4+ — tooltip waktu submit untuk semua yang nilai-nya tidak unik
+    // Podium — animasi via Intersection Observer (trigger saat masuk viewport)
+    if (hasPodium) {
+      const podiumEl = document.getElementById('podium-wrap');
+      podiumEl.classList.add('podium-animate-ready');
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            podiumEl.classList.remove('podium-animate-ready');
+            podiumEl.classList.add('podium-animated');
+            observer.disconnect();
+          }
+        });
+      }, { threshold: 0.3 });
+      observer.observe(podiumEl);
+    }
+
+    // Rank list pos 4+ — waktu submit untuk semua yang nilai-nya tidak unik
     const rest = rows.slice(hasPodium ? 3 : 0);
     const allNilaiCount = {};
     rows.forEach(r => { allNilaiCount[r.nilai] = (allNilaiCount[r.nilai]||0)+1; });
@@ -914,6 +961,8 @@
       document.getElementById('lb-highlight').style.display      = 'none';
       document.getElementById('lb-highlight-tim').style.display  = 'none';
       document.getElementById('podium-wrap').style.display       = 'none';
+      const pw = document.getElementById('podium-wrap');
+      pw.classList.remove('podium-animate-ready', 'podium-animated');
       document.getElementById('stat-peserta').textContent        = '…';
       document.getElementById('stat-max').textContent            = '…';
       document.getElementById('stat-avg').textContent            = '…';
