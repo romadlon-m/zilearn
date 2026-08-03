@@ -113,7 +113,27 @@
     .podium-animated .podium-slot.p2 .podium-bar { animation-delay: 0.15s; }
     .podium-animated .podium-slot.p3 .podium-bar { animation-delay: 0.25s; }
 
-    /* ── Podium ── */
+    /* ── Animasi bergerak terus di podium ── */
+    @keyframes medalFloat {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-4px); }
+    }
+    @keyframes goldGlow {
+      0%, 100% { box-shadow: 0 4px 16px rgba(245,158,11,0.18); }
+      50%       { box-shadow: 0 4px 24px rgba(245,158,11,0.45); }
+    }
+    /* Float medal setelah bounce selesai */
+    .podium-animated .podium-slot .podium-medal {
+      animation: bounceMedal 0.5s cubic-bezier(0.36,0.07,0.19,0.97) both,
+                 medalFloat 3s ease-in-out 0.7s infinite;
+    }
+    .podium-animated .podium-slot.p1 .podium-medal { animation-delay: 0.2s, 0.9s; }
+    .podium-animated .podium-slot.p2 .podium-medal { animation-delay: 0.35s, 1.05s; }
+    .podium-animated .podium-slot.p3 .podium-medal { animation-delay: 0.5s, 1.2s; }
+    /* Glow pulse hanya card juara 1 */
+    .podium-animated .podium-slot.p1 .podium-card {
+      animation: goldGlow 2.5s ease-in-out 1s infinite;
+    }
     .podium { display:grid; grid-template-columns:1fr 1fr 1fr; align-items:flex-end; gap:10px; margin-bottom:1.5rem; }
     .podium-slot { display:flex; flex-direction:column; align-items:center; }
     .podium-card {
@@ -559,6 +579,34 @@
 
           <!-- Tab Tim -->
           <div id="tab-ruangan" style="display:none;">
+            <!-- Podium Tim -->
+            <div class="podium" id="podium-tim-wrap" style="display:none;">
+              <div class="podium-slot p2" id="pt-2">
+                <div class="podium-card">
+                  <span class="podium-medal">🥈</span>
+                  <div class="podium-name"  id="pt2-nama">—</div>
+                  <div class="podium-score" id="pt2-score">—</div>
+                </div>
+                <div class="podium-bar">2</div>
+              </div>
+              <div class="podium-slot p1" id="pt-1">
+                <div class="podium-card">
+                  <span class="podium-medal">🥇</span>
+                  <div class="podium-name"  id="pt1-nama">—</div>
+                  <div class="podium-score" id="pt1-score">—</div>
+                </div>
+                <div class="podium-bar">1</div>
+              </div>
+              <div class="podium-slot p3" id="pt-3">
+                <div class="podium-card">
+                  <span class="podium-medal">🥉</span>
+                  <div class="podium-name"  id="pt3-nama">—</div>
+                  <div class="podium-score" id="pt3-score">—</div>
+                </div>
+                <div class="podium-bar">3</div>
+              </div>
+            </div>
+
             <div class="card" style="padding:0;overflow-x:auto;">
               <table class="lb-table">
                 <thead>
@@ -907,10 +955,47 @@
       if (diff !== 0) return timSortAsc ? diff : -diff;
       // Tie-breaker: hanya kalau skor sama DAN keduanya 100%
       if (timSortKey === 'skor' && a.partisipasi_pct === 100 && b.partisipasi_pct === 100) {
-        return a.waktu_terakhir - b.waktu_terakhir; // lebih awal menang
+        return a.waktu_terakhir - b.waktu_terakhir;
       }
       return 0;
     });
+
+    // Render podium tim (top 3 berdasarkan skor)
+    const sortedBySkor = [...cachedTimRows].sort((a,b) => {
+      const diff = b.skor - a.skor;
+      if (diff !== 0) return diff;
+      if (a.partisipasi_pct === 100 && b.partisipasi_pct === 100)
+        return a.waktu_terakhir - b.waktu_terakhir;
+      return 0;
+    });
+    const podiumTimEl = document.getElementById('podium-tim-wrap');
+    if (sortedBySkor.length >= 2) {
+      const fillTim = (n, row) => {
+        const el = document.getElementById(`pt-${n}`);
+        if (!row) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        document.getElementById(`pt${n}-nama`).textContent  = row.ruangan;
+        document.getElementById(`pt${n}-score`).textContent = row.skor.toFixed(1);
+      };
+      fillTim(1, sortedBySkor[0]);
+      fillTim(2, sortedBySkor[1]);
+      fillTim(3, sortedBySkor[2] || null);
+      podiumTimEl.style.display = 'grid';
+      podiumTimEl.classList.remove('podium-animate-ready', 'podium-animated');
+      podiumTimEl.classList.add('podium-animate-ready');
+      const obsT = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            podiumTimEl.classList.remove('podium-animate-ready');
+            podiumTimEl.classList.add('podium-animated');
+            obsT.disconnect();
+          }
+        });
+      }, { threshold: 0.3 });
+      obsT.observe(podiumTimEl);
+    } else {
+      podiumTimEl.style.display = 'none';
+    }
 
     ['skor','rata','partisipasi_pct'].forEach(k => {
       const thId  = k === 'partisipasi_pct' ? 'th-partisipasi' : `th-${k}`;
@@ -963,6 +1048,8 @@
       document.getElementById('podium-wrap').style.display       = 'none';
       const pw = document.getElementById('podium-wrap');
       pw.classList.remove('podium-animate-ready', 'podium-animated');
+      const pwt = document.getElementById('podium-tim-wrap');
+      if (pwt) { pwt.style.display = 'none'; pwt.classList.remove('podium-animate-ready', 'podium-animated'); }
       document.getElementById('stat-peserta').textContent        = '…';
       document.getElementById('stat-max').textContent            = '…';
       document.getElementById('stat-avg').textContent            = '…';
@@ -1110,7 +1197,7 @@
 
   function cobaPlay() {
     if (muted) return;
-    audio.volume = 0.25;
+    audio.volume = 0.4;
     audio.play().catch(() => {});
   }
 
