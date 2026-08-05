@@ -116,6 +116,13 @@
       border-top: 1px solid var(--border);
       margin: 1.5rem 0;
     }
+    .docs-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+      display: block;
+    }
     /* Sembunyikan elemen bawaan Google Docs */
     .docs-body .title,
     .docs-body .subtitle,
@@ -251,7 +258,7 @@ async function muatKontenDocs(docsUrl) {
     // Hapus elemen tidak perlu dari Google Docs
     body.querySelectorAll('style, script, #header, #footer').forEach(el => el.remove());
 
-    // Sanitasi dengan DOMPurify — izinkan formatting lengkap termasuk inline style
+    // Sanitasi dengan DOMPurify — izinkan formatting lengkap termasuk inline style dan gambar
     const bersih = DOMPurify.sanitize(body.innerHTML, {
       ALLOWED_TAGS: [
         'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -261,11 +268,14 @@ async function muatKontenDocs(docsUrl) {
         'table', 'thead', 'tbody', 'tr', 'td', 'th',
         'span', 'div', 'blockquote',
         'sup', 'sub',
+        'img',
       ],
-      ALLOWED_ATTR: ['href', 'target', 'style', 'class', 'colspan', 'rowspan', 'dir'],
+      ALLOWED_ATTR: [
+        'href', 'target', 'style', 'class', 'colspan', 'rowspan', 'dir',
+        'src', 'alt', 'width', 'height',
+      ],
       ALLOW_UNKNOWN_PROTOCOLS: false,
       FORCE_BODY: true,
-      // Biarkan semua inline style lewat — termasuk font-weight untuk bold
       FORBID_ATTR: [],
     });
 
@@ -273,8 +283,8 @@ async function muatKontenDocs(docsUrl) {
 
     // Buka semua link di tab baru
     docsEl.querySelectorAll('a').forEach(a => {
-      a.target  = '_blank';
-      a.rel     = 'noopener noreferrer';
+      a.target = '_blank';
+      a.rel    = 'noopener noreferrer';
     });
 
   } catch (e) {
