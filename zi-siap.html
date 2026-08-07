@@ -46,6 +46,9 @@
     .kw-cloud-chip:hover{border-color:#e67e22;color:#e67e22}
     .kw-cloud-chip.active{border-color:#e67e22;background:#e67e22;color:#fff}
     .kw-cloud-empty{font-size:.8rem;color:#bdc3c7;font-style:italic}
+    .kw-expand-btn{font-size:.75rem;color:#e67e22;cursor:pointer;font-weight:600;padding:4px 8px;border-radius:20px;border:1.5px dashed #e67e22;background:transparent;transition:all .18s;white-space:nowrap}
+    .kw-expand-btn:hover{background:#fdf0dc}
+    .kw-active-count{font-size:.72rem;color:#e67e22;font-weight:700;margin-left:4px}
 
     /* INTI BANNER */
     .inti-banner{background:linear-gradient(135deg,#fef9f0,#fdf0dc);border-left:4px solid #e67e22;border-radius:8px;padding:11px 15px;margin-bottom:16px;font-size:.875rem;color:#5d4e37;line-height:1.65;display:none}
@@ -164,7 +167,7 @@
 
     <!-- Keyword chip cloud (seamless dengan filter) -->
     <div class="kw-cloud-wrap" id="kwCloudWrap">
-      <div class="kw-cloud-lbl">🔑 Jelajahi Keywords</div>
+      <div class="kw-cloud-lbl" id="kwCloudLbl">🔑 Jelajahi Keywords</div>
       <div class="kw-cloud" id="kwCloud"></div>
     </div>
 
@@ -192,7 +195,9 @@
     let mode          = 'semua';
     let fcIdx         = 0;
     let searchJawaban = false;
-    let activeKwChip  = '';   // keyword chip yang sedang aktif
+    let activeKwChips = new Set();
+    let kwExpanded    = false;
+    const KW_MAX      = 12;
 
     (async () => {
       await loadSidebar('zi-siap');
@@ -211,8 +216,8 @@
         const [r1,r2] = await Promise.all([fetch(URL_QA), fetch(URL_KAT)]);
         const [c1,c2] = await Promise.all([r1.text(), r2.text()]);
 
-        // Sheet ZI Siap: No|Kategori|Sub-kategori|Pertanyaan|Jawaban|PJ|Keywords
-        allData = parseCSVAll(c1).slice(1)
+        // Sheet ZI Siap: No|Kategori|Sub-kategori|Pertanyaan|Jawaban|Keywords|PJ
+        allData = parseCSVAll(c1).slice(3)
           .filter(r => r[3]?.trim())
           .map((r,i) => ({
             no: r[0]?.trim() || String(i+1),
@@ -226,7 +231,7 @@
 
         // Sheet Kategori: Kategori|Sub-kategori|Inti
         // Sub-kategori kosong = level kategori
-        parseCSVAll(c2).slice(1).forEach(r => {
+        parseCSVAll(c2).slice(2).forEach(r => {
           const key = `${(r[0]||'').trim()}|||${(r[1]||'').trim()}`;
           katMap[key] = (r[2]||'').trim();
         });
@@ -280,6 +285,13 @@
           if (searchJawaban) hay += ` ${d.jawaban}`.toLowerCase();
           if (!hay.includes(q)) return false;
         }
+        // Multi-select keyword chips — AND logic
+        if (activeKwChips.size > 0) {
+          const kwLower = d.keywords.toLowerCase();
+          for (const kw of activeKwChips) {
+            if (!kwLower.includes(kw.toLowerCase())) return false;
+          }
+        }
         return true;
       });
 
@@ -306,14 +318,15 @@
       ['selKat','selSub','selPJ'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('searchInput').value='';
       document.getElementById('selSub').innerHTML='<option value="">Semua Sub-kategori</option>';
-      activeKwChip='';
+      activeKwChips.clear();
+      kwExpanded = false;
       applyFilter();
     }
 
     // ── KEYWORD CHIP CLOUD ────────────────────────────────────────────────────
     function buildKwCloud() {
       const cloud = document.getElementById('kwCloud');
-      const wrap  = document.getElementById('kwCloudWrap');
+      const lbl   = document.getElementById('kwCloudLbl');
 
       const freq = {};
       filtered.forEach(d => {
@@ -326,29 +339,41 @@
 
       const unique = Object.keys(freq).sort((a,b) => freq[b]-freq[a]);
 
+      const activeCount = activeKwChips.size;
+      if (lbl) lbl.innerHTML = `🔑 Jelajahi Keywords${activeCount > 0 ? ` <span class="kw-active-count">(${activeCount} aktif)</span>` : ''}`;
+
       if (!unique.length) {
         cloud.innerHTML = '<span class="kw-cloud-empty">Keywords sedang dilengkapi tim</span>';
-        wrap.style.display = 'block';
         return;
       }
 
-      const currentQ = document.getElementById('searchInput').value.trim().toLowerCase();
-      cloud.innerHTML = unique.map(k => {
-        const isActive = activeKwChip === k;
-        return `<span class="kw-cloud-chip ${isActive?'active':''}" onclick="clickKwChip(${JSON.stringify(k)})">${esc(k)}</span>`;
+      const toShow = kwExpanded ? unique : unique.slice(0, KW_MAX);
+
+      // Gunakan data-kw supaya karakter khusus tidak merusak onclick
+      let html = toShow.map(k => {
+        const isActive = activeKwChips.has(k);
+        return `<span class="kw-cloud-chip ${isActive?'active':''}" data-kw="${esc(k)}" onclick="clickKwChip(this.dataset.kw)">${esc(k)}</span>`;
       }).join('');
-      wrap.style.display = 'block';
+
+      if (unique.length > KW_MAX) {
+        html += kwExpanded
+          ? `<span class="kw-expand-btn" onclick="toggleKwExpand()">Sembunyikan ↑</span>`
+          : `<span class="kw-expand-btn" onclick="toggleKwExpand()">+${unique.length - KW_MAX} lainnya ↓</span>`;
+      }
+
+      cloud.innerHTML = html;
+    }
+
+    function toggleKwExpand() {
+      kwExpanded = !kwExpanded;
+      buildKwCloud();
     }
 
     function clickKwChip(kw) {
-      const input = document.getElementById('searchInput');
-      if (activeKwChip === kw) {
-        // deselect
-        activeKwChip = '';
-        input.value = '';
+      if (activeKwChips.has(kw)) {
+        activeKwChips.delete(kw);
       } else {
-        activeKwChip = kw;
-        input.value = kw;
+        activeKwChips.add(kw);
       }
       applyFilter();
     }
@@ -439,7 +464,6 @@
       let h='';
       if(d.kategori) h+=`<span class="tag tag-kat">${esc(d.kategori)}</span>`;
       if(d.subkat)   h+=`<span class="tag tag-sub">${esc(d.subkat)}</span>`;
-      if(d.pj)       h+=`<span class="tag tag-pj">${esc(d.pj)}</span>`;
       return h;
     }
     function esc(s) {
