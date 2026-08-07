@@ -27,6 +27,9 @@ const CONFIG = {
   SHEETS_LIBRARY  : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1Wl8j5VCPFV6ewaewXeN5Il3-ztMZS9X3UXMxwfGYWd8GwkH_BSY9Cwpd98wivz4jWvJ-RwTaQDaJ/pub?gid=1911028908&single=true&output=csv',
   SHEETS_SOAL     : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0czDtHVNknK2kS6AnCUhIkALVkvT0dOecxWDkITKkg0ci9Msz0q-6Zp9UM5-eQHfzXu4wA4X8_qJd/pub?gid=438869818&single=true&output=csv',
 
+  SHEETS_ZISIAP          : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT30aB7DWONzhOxew_V7kC3UvfWUctmNcn_P9WwrFr7_D9QZfH8IX0t7s4_hciRd9bgUfYZnXwIPCS3/pub?gid=888232776&single=true&output=csv',
+  SHEETS_ZISIAP_KATEGORI : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT30aB7DWONzhOxew_V7kC3UvfWUctmNcn_P9WwrFr7_D9QZfH8IX0t7s4_hciRd9bgUfYZnXwIPCS3/pub?gid=1040041931&single=true&output=csv',
+
   /* ── Nama Platform ────────────────────────────────────── */
   APP_NAME      : 'ZI Learning',
   APP_SUB       : 'BPS Provinsi Kepulauan Bangka Belitung',

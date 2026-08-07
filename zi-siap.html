@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZI Siap | ZI Learning</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:#f5f6fa;display:flex;min-height:100vh}
+    #sidebar-container{width:240px;flex-shrink:0}
+    .main{flex:1;padding:28px 28px 60px;overflow-y:auto;min-width:0}
+
+    .page-header{margin-bottom:20px}
+    .page-header h1{font-size:1.45rem;font-weight:700;color:#2c3e50}
+    .page-header p{font-size:.85rem;color:#7f8c8d;margin-top:3px}
+
+    /* MODE TOGGLE */
+    .mode-toggle{display:flex;gap:8px;margin-bottom:16px}
+    .mode-btn{padding:9px 22px;border-radius:8px;border:2px solid #e67e22;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .18s}
+    .mode-btn.active{background:#e67e22;color:#fff}
+    .mode-btn:not(.active){background:#fff;color:#e67e22}
+
+    /* STATS */
+    .stats-bar{background:#fff;border-radius:10px;padding:11px 16px;display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .stat-item{font-size:.82rem;color:#7f8c8d}
+    .stat-item strong{color:#e67e22;font-weight:700}
+
+    /* FILTER */
+    .filter-area{background:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .fg{display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px}
+    .fg.wide{flex:2.5;min-width:200px}
+    .fg label{font-size:.7rem;font-weight:700;color:#95a5a6;text-transform:uppercase;letter-spacing:.5px}
+    .fg select,.fg input{padding:8px 11px;border-radius:8px;border:1.5px solid #e0e0e0;font-family:inherit;font-size:.875rem;color:#2c3e50;background:#fafafa;transition:border .18s}
+    .fg select:focus,.fg input:focus{outline:none;border-color:#e67e22}
+    .search-row{display:flex;gap:8px;align-items:flex-end}
+    .btn-jawaban{padding:8px 12px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fafafa;color:#95a5a6;font-family:inherit;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap;align-self:flex-end;height:38px}
+    .btn-jawaban.active{border-color:#e67e22;background:#fdf0dc;color:#e67e22}
+    .btn-reset{padding:8px 16px;border-radius:8px;border:none;background:#f0f0f0;color:#7f8c8d;font-family:inherit;font-size:.82rem;cursor:pointer;transition:background .18s;white-space:nowrap;align-self:flex-end}
+    .btn-reset:hover{background:#e0e0e0}
+
+    /* KEYWORD CLOUD */
+    .kw-cloud-wrap{background:#fff;border-radius:0 0 12px 12px;padding:10px 16px 14px;margin-bottom:16px;box-shadow:0 2px 4px rgba(0,0,0,.06);border-top:1px solid #f0f0f0}
+    .kw-cloud-lbl{font-size:.68rem;font-weight:700;color:#95a5a6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+    .kw-cloud{display:flex;flex-wrap:wrap;gap:6px}
+    .kw-cloud-chip{font-size:.78rem;padding:4px 11px;border-radius:20px;border:1.5px solid #e0e0e0;background:#fafafa;color:#555;cursor:pointer;transition:all .18s;font-weight:500}
+    .kw-cloud-chip:hover{border-color:#e67e22;color:#e67e22}
+    .kw-cloud-chip.active{border-color:#e67e22;background:#e67e22;color:#fff}
+    .kw-cloud-empty{font-size:.8rem;color:#bdc3c7;font-style:italic}
+
+    /* INTI BANNER */
+    .inti-banner{background:linear-gradient(135deg,#fef9f0,#fdf0dc);border-left:4px solid #e67e22;border-radius:8px;padding:11px 15px;margin-bottom:16px;font-size:.875rem;color:#5d4e37;line-height:1.65;display:none}
+    .inti-banner strong{display:block;margin-bottom:3px;font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;color:#e67e22}
+
+    /* ACCORDION */
+    .acc-list{display:flex;flex-direction:column;gap:8px}
+    .acc-item{background:#fff;border-radius:12px;border:1.5px solid #e8ecf0;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:border-color .18s}
+    .acc-item:hover{border-color:#e67e22}
+    .acc-item.open{border-color:#e67e22}
+    .acc-header{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;cursor:pointer;user-select:none}
+    .acc-no{min-width:28px;height:28px;border-radius:50%;background:#fdf0dc;color:#e67e22;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+    .acc-meta{flex:1}
+    .acc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px}
+    .tag{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:20px}
+    .tag-kat{background:#ebf5fb;color:#2980b9}
+    .tag-sub{background:#eafaf1;color:#27ae60}
+    .tag-pj{background:#fef9f0;color:#e67e22}
+    .acc-q{font-size:.9rem;font-weight:600;color:#2c3e50;line-height:1.5;margin-bottom:8px}
+    /* Keywords visible in collapsed state */
+    .acc-kw-preview{display:flex;flex-wrap:wrap;gap:5px}
+    .kw-chip{background:#f8f9fa;border:1px solid #dee2e6;color:#495057;font-size:.72rem;padding:2px 9px;border-radius:20px;font-weight:500}
+    .kw-chip.empty{color:#bdc3c7;font-style:italic;border-style:dashed}
+    .acc-chev{font-size:.72rem;color:#bdc3c7;transition:transform .18s;flex-shrink:0;margin-top:5px}
+    .acc-item.open .acc-chev{transform:rotate(180deg);color:#e67e22}
+    /* Body: only jawaban */
+    .acc-body{display:none;padding:12px 15px 15px;border-top:1px solid #f0f0f0}
+    .acc-item.open .acc-body{display:block}
+    .section-lbl{font-size:.7rem;font-weight:700;color:#95a5a6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+    .jawaban-box{font-size:.875rem;color:#34495e;line-height:1.7;background:#f8f9fa;border-radius:8px;padding:12px;white-space:pre-wrap}
+    .jawaban-box.empty{color:#bdc3c7;font-style:italic}
+
+    /* FLASHCARD */
+    .fc-wrap{display:flex;flex-direction:column;align-items:center}
+    .fc-nav-top{display:flex;align-items:center;gap:14px;width:100%;max-width:680px;margin-bottom:14px}
+    .fc-counter{flex:1;text-align:center;font-size:.875rem;font-weight:600;color:#7f8c8d}
+    .fc-btn{padding:8px 20px;border-radius:8px;border:2px solid #e67e22;background:#fff;color:#e67e22;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .18s}
+    .fc-btn:hover:not(:disabled){background:#e67e22;color:#fff}
+    .fc-btn:disabled{opacity:.35;cursor:default}
+    .fc-progress{width:100%;max-width:680px;height:4px;background:#e8ecf0;border-radius:4px;margin-bottom:18px;overflow:hidden}
+    .fc-progress-fill{height:100%;background:#e67e22;border-radius:4px;transition:width .3s}
+    .fc-card{background:#fff;border-radius:16px;border:2px solid #e8ecf0;width:100%;max-width:680px;box-shadow:0 4px 16px rgba(0,0,0,.07);padding:26px}
+    .fc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+    .fc-q{font-size:1.05rem;font-weight:700;color:#2c3e50;line-height:1.6;margin-bottom:20px}
+    .fc-kw-sect{margin-bottom:18px}
+    .fc-kw-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+    .fc-divider{border:none;border-top:1.5px dashed #e0e0e0;margin:18px 0}
+    .fc-reveal-btn{width:100%;padding:12px;border-radius:10px;border:2px dashed #e67e22;background:#fdf9f5;color:#e67e22;font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .18s}
+    .fc-reveal-btn:hover{background:#fdf0dc}
+    .fc-answer-box{background:#f8f9fa;border-radius:10px;padding:15px;font-size:.9rem;color:#34495e;line-height:1.7;white-space:pre-wrap;display:none}
+    .fc-answer-box.empty{color:#bdc3c7;font-style:italic}
+    .fc-answer-box.visible{display:block}
+
+    .empty-state{text-align:center;padding:60px 20px;color:#bdc3c7}
+    .empty-state .icon{font-size:2.8rem;margin-bottom:10px}
+    .empty-state p{font-size:.9rem}
+    .loading{text-align:center;padding:60px;color:#7f8c8d;font-size:.9rem}
+
+    @media(max-width:768px){
+      #sidebar-container{display:none}
+      .main{padding:16px 14px 60px}
+      .fg{min-width:100%}
+      .fc-card{padding:18px}
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-container"></div>
+  <div class="main">
+    <div class="page-header">
+      <h1>ZI Siap</h1>
+      <p>Persiapan pertanyaan evaluasi lapangan TPN menuju WBBM</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btnSemua"  onclick="setMode('semua')">📋 Semua Pertanyaan</button>
+      <button class="mode-btn"        id="btnBelajar" onclick="setMode('belajar')">🎯 Mode Belajar</button>
+    </div>
+
+    <div class="stats-bar">
+      <span class="stat-item">Total: <strong id="statTotal">–</strong></span>
+      <span class="stat-item">Ditampilkan: <strong id="statTampil">–</strong></span>
+      <span class="stat-item">Sudah dijawab: <strong id="statJawab">–</strong></span>
+    </div>
+
+    <!-- Filter area + keyword cloud dalam 1 card -->
+    <div class="filter-area">
+      <div class="fg wide">
+        <label>🔍 Cari pertanyaan atau keyword</label>
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Ketik untuk mencari..." oninput="applyFilter()" style="flex:1">
+          <button class="btn-jawaban" id="btnJawaban" onclick="toggleSearchJawaban()" title="Aktifkan untuk cari di kolom jawaban juga">+ Cari di Jawaban</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Kategori</label>
+        <select id="selKat" onchange="onKatChange()">
+          <option value="">Semua Kategori</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Sub-kategori</label>
+        <select id="selSub" onchange="applyFilter()">
+          <option value="">Semua Sub-kategori</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>PJ</label>
+        <select id="selPJ" onchange="applyFilter()">
+          <option value="">Semua PJ</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilter()">Reset</button>
+    </div>
+
+    <!-- Keyword chip cloud (seamless dengan filter) -->
+    <div class="kw-cloud-wrap" id="kwCloudWrap">
+      <div class="kw-cloud-lbl">🔑 Jelajahi Keywords</div>
+      <div class="kw-cloud" id="kwCloud"></div>
+    </div>
+
+    <div class="inti-banner" id="intiBanner">
+      <strong>Inti yang ingin digali evaluator</strong>
+      <span id="intiText"></span>
+    </div>
+
+    <div id="contentArea">
+      <div class="loading">Memuat data...</div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="sidebar.js"></script>
+  <script>
+    /* ── URL: tambahkan di config.js ──────────────────────────────────────────
+       const SHEETS_ZISIAP          = 'URL_CSV_SHEET_ZI_SIAP';
+       const SHEETS_ZISIAP_KATEGORI = 'URL_CSV_SHEET_KATEGORI';
+    ── ────────────────────────────────────────────────────────────────────── */
+    const URL_QA  = CONFIG.SHEETS_ZISIAP          || '';
+    const URL_KAT = CONFIG.SHEETS_ZISIAP_KATEGORI || '';
+
+    let allData       = [];
+    let katMap        = {};   // "Kat|||Sub" atau "Kat|||" -> inti
+    let filtered      = [];
+    let mode          = 'semua';
+    let fcIdx         = 0;
+    let searchJawaban = false;
+    let activeKwChip  = '';   // keyword chip yang sedang aktif
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSidebar('zi-siap');
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (!session) { window.location.href = 'login.html'; return; }
+      await loadData();
+    });
+
+    async function loadData() {
+      if (!URL_QA || !URL_KAT) {
+        document.getElementById('contentArea').innerHTML =
+          '<div class="loading">URL Google Sheets belum diisi di config.js.<br>Tambahkan SHEETS_ZISIAP dan SHEETS_ZISIAP_KATEGORI.</div>';
+        return;
+      }
+      try {
+        const [r1,r2] = await Promise.all([fetch(URL_QA), fetch(URL_KAT)]);
+        const [c1,c2] = await Promise.all([r1.text(), r2.text()]);
+
+        // Sheet ZI Siap: No|Kategori|Sub-kategori|Pertanyaan|Jawaban|PJ|Keywords
+        allData = parseCSVAll(c1).slice(1)
+          .filter(r => r[3]?.trim())
+          .map((r,i) => ({
+            no: r[0]?.trim() || String(i+1),
+            kategori: (r[1]||'').trim(),
+            subkat:   (r[2]||'').trim(),
+            pertanyaan:(r[3]||'').trim(),
+            jawaban:  (r[4]||'').trim(),
+            keywords: (r[5]||'').trim(),
+            pj:       (r[6]||'').trim(),
+          }));
+
+        // Sheet Kategori: Kategori|Sub-kategori|Inti
+        // Sub-kategori kosong = level kategori
+        parseCSVAll(c2).slice(1).forEach(r => {
+          const key = `${(r[0]||'').trim()}|||${(r[1]||'').trim()}`;
+          katMap[key] = (r[2]||'').trim();
+        });
+
+        buildFilters();
+        applyFilter();
+      } catch(e) {
+        document.getElementById('contentArea').innerHTML =
+          '<div class="loading">Gagal memuat data. Cek koneksi atau URL di config.js.</div>';
+      }
+    }
+
+    function buildFilters() {
+      const katSet = [...new Set(allData.map(d=>d.kategori).filter(Boolean))];
+      const pjSet  = [...new Set(allData.map(d=>d.pj).filter(Boolean))];
+      const sk=document.getElementById('selKat');
+      const sp=document.getElementById('selPJ');
+      katSet.forEach(k=>sk.appendChild(new Option(k,k)));
+      pjSet.forEach(p=>sp.appendChild(new Option(p,p)));
+    }
+
+    function onKatChange() {
+      const kat=document.getElementById('selKat').value;
+      const selSub=document.getElementById('selSub');
+      selSub.innerHTML='<option value="">Semua Sub-kategori</option>';
+      if (kat) {
+        const subs=[...new Set(allData.filter(d=>d.kategori===kat).map(d=>d.subkat).filter(Boolean))];
+        subs.forEach(s=>selSub.appendChild(new Option(s,s)));
+      }
+      applyFilter();
+    }
+
+    function toggleSearchJawaban() {
+      searchJawaban = !searchJawaban;
+      document.getElementById('btnJawaban').classList.toggle('active', searchJawaban);
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const kat = document.getElementById('selKat').value;
+      const sub = document.getElementById('selSub').value;
+      const pj  = document.getElementById('selPJ').value;
+      const q   = document.getElementById('searchInput').value.toLowerCase().trim();
+
+      filtered = allData.filter(d => {
+        if (kat && d.kategori !== kat) return false;
+        if (sub && d.subkat   !== sub) return false;
+        if (pj  && d.pj       !== pj)  return false;
+        if (q) {
+          let hay = `${d.pertanyaan} ${d.keywords} ${d.kategori} ${d.subkat}`.toLowerCase();
+          if (searchJawaban) hay += ` ${d.jawaban}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      // Inti banner: sub dulu, lalu kat saja
+      const keySub = `${kat}|||${sub}`;
+      const keyKat = `${kat}|||`;
+      let inti = '';
+      if (sub && katMap[keySub]) inti = katMap[keySub];
+      else if (kat && !sub && katMap[keyKat]) inti = katMap[keyKat];
+      const ban = document.getElementById('intiBanner');
+      document.getElementById('intiText').textContent = inti;
+      ban.style.display = inti ? 'block' : 'none';
+
+      document.getElementById('statTotal').textContent  = allData.length;
+      document.getElementById('statTampil').textContent = filtered.length;
+      document.getElementById('statJawab').textContent  = allData.filter(d=>d.jawaban).length;
+
+      buildKwCloud();
+      fcIdx = 0;
+      render();
+    }
+
+    function resetFilter() {
+      ['selKat','selSub','selPJ'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('searchInput').value='';
+      document.getElementById('selSub').innerHTML='<option value="">Semua Sub-kategori</option>';
+      activeKwChip='';
+      applyFilter();
+    }
+
+    // ── KEYWORD CHIP CLOUD ────────────────────────────────────────────────────
+    function buildKwCloud() {
+      const cloud = document.getElementById('kwCloud');
+      const wrap  = document.getElementById('kwCloudWrap');
+
+      const freq = {};
+      filtered.forEach(d => {
+        if (!d.keywords) return;
+        d.keywords.split(',').forEach(k => {
+          const kw = k.trim();
+          if (kw) freq[kw] = (freq[kw]||0) + 1;
+        });
+      });
+
+      const unique = Object.keys(freq).sort((a,b) => freq[b]-freq[a]);
+
+      if (!unique.length) {
+        cloud.innerHTML = '<span class="kw-cloud-empty">Keywords sedang dilengkapi tim</span>';
+        wrap.style.display = 'block';
+        return;
+      }
+
+      const currentQ = document.getElementById('searchInput').value.trim().toLowerCase();
+      cloud.innerHTML = unique.map(k => {
+        const isActive = activeKwChip === k;
+        return `<span class="kw-cloud-chip ${isActive?'active':''}" onclick="clickKwChip(${JSON.stringify(k)})">${esc(k)}</span>`;
+      }).join('');
+      wrap.style.display = 'block';
+    }
+
+    function clickKwChip(kw) {
+      const input = document.getElementById('searchInput');
+      if (activeKwChip === kw) {
+        // deselect
+        activeKwChip = '';
+        input.value = '';
+      } else {
+        activeKwChip = kw;
+        input.value = kw;
+      }
+      applyFilter();
+    }
+
+    // ── MODE ──────────────────────────────────────────────────────────────────
+    function setMode(m) {
+      mode = m;
+      document.getElementById('btnSemua').classList.toggle('active', m==='semua');
+      document.getElementById('btnBelajar').classList.toggle('active', m==='belajar');
+      fcIdx = 0; render();
+    }
+
+    // ── RENDER ────────────────────────────────────────────────────────────────
+    function render() { mode==='semua' ? renderAcc() : renderFC(); }
+
+    function renderAcc() {
+      const area = document.getElementById('contentArea');
+      if (!filtered.length) { area.innerHTML = emptyState(); return; }
+      area.innerHTML = `<div class="acc-list">${filtered.map((d,i)=>accItem(d,i)).join('')}</div>`;
+    }
+
+    function accItem(d, i) {
+      // Keywords tampil di collapsed state
+      const kwHtml = d.keywords
+        ? d.keywords.split(',').map(k=>`<span class="kw-chip">${esc(k.trim())}</span>`).join('')
+        : '<span class="kw-chip empty">Belum diisi</span>';
+      const jawHtml = d.jawaban || 'Belum diisi';
+      const jawCls  = d.jawaban ? '' : ' empty';
+      return `
+        <div class="acc-item" id="ai-${i}">
+          <div class="acc-header" onclick="toggleAcc(${i})">
+            <div class="acc-no">${esc(d.no)}</div>
+            <div class="acc-meta">
+              <div class="acc-tags">${chips(d)}</div>
+              <div class="acc-q">${esc(d.pertanyaan)}</div>
+              <div class="acc-kw-preview">${kwHtml}</div>
+            </div>
+            <div class="acc-chev">▼</div>
+          </div>
+          <div class="acc-body">
+            <div class="section-lbl">💬 Jawaban</div>
+            <div class="jawaban-box${jawCls}">${esc(jawHtml)}</div>
+          </div>
+        </div>`;
+    }
+
+    function toggleAcc(i) { document.getElementById(`ai-${i}`).classList.toggle('open'); }
+
+    function renderFC() {
+      const area = document.getElementById('contentArea');
+      if (!filtered.length) { area.innerHTML = emptyState(); return; }
+      const d=filtered[fcIdx], total=filtered.length;
+      const pct=Math.round(((fcIdx+1)/total)*100);
+      const kwHtml = d.keywords
+        ? d.keywords.split(',').map(k=>`<span class="kw-chip">${esc(k.trim())}</span>`).join('')
+        : '<span class="kw-chip empty">Belum diisi</span>';
+      const jawHtml=d.jawaban||'Belum diisi';
+      const jawCls=d.jawaban?'':' empty';
+      area.innerHTML=`
+        <div class="fc-wrap">
+          <div class="fc-nav-top">
+            <button class="fc-btn" onclick="fcNav(-1)" ${fcIdx===0?'disabled':''}>← Sebelumnya</button>
+            <div class="fc-counter">${fcIdx+1} / ${total}</div>
+            <button class="fc-btn" onclick="fcNav(1)" ${fcIdx===total-1?'disabled':''}>Berikutnya →</button>
+          </div>
+          <div class="fc-progress"><div class="fc-progress-fill" style="width:${pct}%"></div></div>
+          <div class="fc-card">
+            <div class="fc-tags">${chips(d)}</div>
+            <div class="fc-q">${esc(d.pertanyaan)}</div>
+            <div class="fc-kw-sect">
+              <div class="section-lbl">🔑 Keywords</div>
+              <div class="fc-kw-row">${kwHtml}</div>
+            </div>
+            <hr class="fc-divider">
+            <button class="fc-reveal-btn" id="revBtn" onclick="revealAns()">👁 Tap untuk lihat jawaban</button>
+            <div class="fc-answer-box${jawCls}" id="ansBox">${esc(jawHtml)}</div>
+          </div>
+        </div>`;
+    }
+
+    function fcNav(dir) { fcIdx=Math.max(0,Math.min(filtered.length-1,fcIdx+dir)); render(); }
+    function revealAns() {
+      document.getElementById('revBtn').style.display='none';
+      document.getElementById('ansBox').classList.add('visible');
+    }
+
+    function chips(d) {
+      let h='';
+      if(d.kategori) h+=`<span class="tag tag-kat">${esc(d.kategori)}</span>`;
+      if(d.subkat)   h+=`<span class="tag tag-sub">${esc(d.subkat)}</span>`;
+      if(d.pj)       h+=`<span class="tag tag-pj">${esc(d.pj)}</span>`;
+      return h;
+    }
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function emptyState() {
+      return`<div class="empty-state"><div class="icon">🔍</div><p>Tidak ada pertanyaan yang cocok.</p></div>`;
+    }
+  </script>
+</body>
+</html>
