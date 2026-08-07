@@ -1077,7 +1077,8 @@
       try {
         const { data: pegawaiData } = await db
           .from('pegawai')
-          .select('ruangan, role, satker');
+          .select('ruangan, role, satker')
+          .eq('aktif', true);
         if (pegawaiData) {
           pegawaiData.forEach(p => {
             if (p.satker === '1900' && p.ruangan) {

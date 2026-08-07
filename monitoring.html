@@ -309,6 +309,7 @@ let autoRefreshTimer   = null;
   const { data: peg, error: ep } = await db
     .from('pegawai')
     .select('id, nama, satker, ruangan, role')
+    .eq('aktif', true)
     .order('nama', { ascending: true });
   if (ep) { console.error('Gagal fetch pegawai:', ep.message); }
   else allPegawai = peg || [];

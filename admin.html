@@ -460,6 +460,7 @@ let editId         = null;
   // Fetch semua pegawai (role pegawai saja)
   const { data: peg, error: ep } = await db
     .from('pegawai').select('id, nama, satker, ruangan, nama_samaran, role')
+    .eq('aktif', true)
     .order('nama', { ascending: true });
   if (ep) { showAlert('Gagal memuat pegawai: ' + ep.message, 'error'); }
   else allPegawai = peg || [];
