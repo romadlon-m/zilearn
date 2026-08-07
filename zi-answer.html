@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZI Siap | ZI Learning</title>
+  <title>ZI Answer | ZI Learning</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="css/style.css">
@@ -66,7 +66,6 @@
     .tag{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:20px}
     .tag-kat{background:#ebf5fb;color:#2980b9}
     .tag-sub{background:#eafaf1;color:#27ae60}
-    .tag-pj{background:#fef9f0;color:#e67e22}
     .acc-q{font-size:.9rem;font-weight:600;color:#2c3e50;line-height:1.5;margin-bottom:8px}
     /* Keywords visible in collapsed state */
     .acc-kw-preview{display:flex;flex-wrap:wrap;gap:5px}
@@ -120,8 +119,8 @@
   <div id="sidebar-container"></div>
   <main class="main-content">
     <div class="page-header">
-      <h1>ZI Siap</h1>
-      <p>Persiapan pertanyaan evaluasi lapangan TPN menuju WBBM</p>
+      <h1>ZI Answer</h1>
+      <p>Siap Menjawab, Siap Raih Predikat.</p>
     </div>
 
     <div class="mode-toggle">
@@ -156,12 +155,7 @@
           <option value="">Semua Sub-kategori</option>
         </select>
       </div>
-      <div class="fg">
-        <label>PJ</label>
-        <select id="selPJ" onchange="applyFilter()">
-          <option value="">Semua PJ</option>
-        </select>
-      </div>
+
       <button class="btn-reset" onclick="resetFilter()">Reset</button>
     </div>
 
@@ -200,7 +194,7 @@
     const KW_MAX      = 12;
 
     (async () => {
-      await loadSidebar('zi-siap');
+      await loadSidebar('zi-answer');
       const session = await getSession();
       if (!session) { window.location.href = 'login.html'; return; }
       await loadData();
@@ -226,7 +220,6 @@
             pertanyaan:(r[3]||'').trim(),
             jawaban:  (r[4]||'').trim(),
             keywords: (r[5]||'').trim(),
-            pj:       (r[6]||'').trim(),
           }));
 
         // Sheet Kategori: Kategori|Sub-kategori|Inti
@@ -246,11 +239,8 @@
 
     function buildFilters() {
       const katSet = [...new Set(allData.map(d=>d.kategori).filter(Boolean))];
-      const pjSet  = [...new Set(allData.map(d=>d.pj).filter(Boolean))];
       const sk=document.getElementById('selKat');
-      const sp=document.getElementById('selPJ');
       katSet.forEach(k=>sk.appendChild(new Option(k,k)));
-      pjSet.forEach(p=>sp.appendChild(new Option(p,p)));
     }
 
     function onKatChange() {
@@ -273,13 +263,11 @@
     function applyFilter() {
       const kat = document.getElementById('selKat').value;
       const sub = document.getElementById('selSub').value;
-      const pj  = document.getElementById('selPJ').value;
       const q   = document.getElementById('searchInput').value.toLowerCase().trim();
 
       filtered = allData.filter(d => {
         if (kat && d.kategori !== kat) return false;
         if (sub && d.subkat   !== sub) return false;
-        if (pj  && d.pj       !== pj)  return false;
         if (q) {
           let hay = `${d.pertanyaan} ${d.keywords} ${d.kategori} ${d.subkat}`.toLowerCase();
           if (searchJawaban) hay += ` ${d.jawaban}`.toLowerCase();
@@ -315,7 +303,7 @@
     }
 
     function resetFilter() {
-      ['selKat','selSub','selPJ'].forEach(id=>document.getElementById(id).value='');
+      ['selKat','selSub'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('searchInput').value='';
       document.getElementById('selSub').innerHTML='<option value="">Semua Sub-kategori</option>';
       activeKwChips.clear();
@@ -348,8 +336,6 @@
       }
 
       const toShow = kwExpanded ? unique : unique.slice(0, KW_MAX);
-
-      // Gunakan data-kw supaya karakter khusus tidak merusak onclick
       let html = toShow.map(k => {
         const isActive = activeKwChips.has(k);
         return `<span class="kw-cloud-chip ${isActive?'active':''}" data-kw="${esc(k)}" onclick="clickKwChip(this.dataset.kw)">${esc(k)}</span>`;
@@ -464,6 +450,7 @@
       let h='';
       if(d.kategori) h+=`<span class="tag tag-kat">${esc(d.kategori)}</span>`;
       if(d.subkat)   h+=`<span class="tag tag-sub">${esc(d.subkat)}</span>`;
+
       return h;
     }
     function esc(s) {
