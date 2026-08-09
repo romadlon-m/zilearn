@@ -669,9 +669,10 @@
     const d   = new Date(ts);
     const jam = String(d.getHours()).padStart(2,'0');
     const mnt = String(d.getMinutes()).padStart(2,'0');
-    if (!isMultiHari) return `${jam}:${mnt}`;
+    const dtk = String(d.getSeconds()).padStart(2,'0');
+    if (!isMultiHari) return `${jam}:${mnt}:${dtk}`;
     const tgl = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
-    return `${tgl} ${jam}:${mnt}`;
+    return `${tgl} ${jam}:${mnt}:${dtk}`;
   }
 
   function countUp(elId, target, duration) {
@@ -1198,7 +1199,7 @@
 
   function cobaPlay() {
     if (muted) return;
-    audio.volume = 0.4;
+    audio.volume = 0.2;
     audio.play().catch(() => {});
   }
 
