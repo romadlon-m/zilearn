@@ -155,6 +155,13 @@
           <option value="">Semua Sub-kategori</option>
         </select>
       </div>
+      <div class="fg">
+        <label>Status Jawaban</label>
+        <select id="selJawabStatus" onchange="applyFilter()">
+          <option value="answered" selected>Sudah Ada Jawaban</option>
+          <option value="all">Semua Pertanyaan</option>
+        </select>
+      </div>
 
       <button class="btn-reset" onclick="resetFilter()">Reset</button>
     </div>
@@ -264,10 +271,12 @@
       const kat = document.getElementById('selKat').value;
       const sub = document.getElementById('selSub').value;
       const q   = document.getElementById('searchInput').value.toLowerCase().trim();
+      const jawabStatus = document.getElementById('selJawabStatus').value;
 
       filtered = allData.filter(d => {
         if (kat && d.kategori !== kat) return false;
         if (sub && d.subkat   !== sub) return false;
+        if (jawabStatus === 'answered' && !d.jawaban) return false;
         if (q) {
           let hay = `${d.pertanyaan} ${d.keywords} ${d.kategori} ${d.subkat}`.toLowerCase();
           if (searchJawaban) hay += ` ${d.jawaban}`.toLowerCase();
@@ -306,6 +315,7 @@
       ['selKat','selSub'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('searchInput').value='';
       document.getElementById('selSub').innerHTML='<option value="">Semua Sub-kategori</option>';
+      document.getElementById('selJawabStatus').value='answered';
       activeKwChips.clear();
       kwExpanded = false;
       applyFilter();
@@ -385,8 +395,8 @@
       // Keywords tampil di collapsed state
       const kwHtml = d.keywords
         ? d.keywords.split(',').map(k=>`<span class="kw-chip">${esc(k.trim())}</span>`).join('')
-        : '<span class="kw-chip empty">Belum diisi</span>';
-      const jawHtml = d.jawaban || 'Belum diisi';
+        : '<span class="kw-chip empty">Keyword belum diisi</span>';
+      const jawHtml = d.jawaban || 'Jawaban belum diisi';
       const jawCls  = d.jawaban ? '' : ' empty';
       return `
         <div class="acc-item" id="ai-${i}">
@@ -415,8 +425,8 @@
       const pct=Math.round(((fcIdx+1)/total)*100);
       const kwHtml = d.keywords
         ? d.keywords.split(',').map(k=>`<span class="kw-chip">${esc(k.trim())}</span>`).join('')
-        : '<span class="kw-chip empty">Belum diisi</span>';
-      const jawHtml=d.jawaban||'Belum diisi';
+        : '<span class="kw-chip empty">Keyword belum diisi</span>';
+      const jawHtml=d.jawaban||'Jawaban belum diisi';
       const jawCls=d.jawaban?'':' empty';
       area.innerHTML=`
         <div class="fc-wrap">
